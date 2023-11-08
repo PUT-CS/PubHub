@@ -35,9 +35,6 @@ auto ServerSocket::listen() -> Result<None> {
 }
 
 auto ServerSocket::accept() -> Result<ClientSocket> {
-    logInfo("ACCEPTING");
-    printf("Server FD: %d\n", this->fd);
-
     sockaddr_in new_addr;
     socklen_t addrlen = sizeof(new_addr);
     
@@ -45,8 +42,6 @@ auto ServerSocket::accept() -> Result<ClientSocket> {
     if (client_fd == -1) {
         perror("Accept failed");
     }
-    
-    printf("Client FD: %d\n", client_fd);
 
     auto client_addr = SocketAddress(new_addr);
     

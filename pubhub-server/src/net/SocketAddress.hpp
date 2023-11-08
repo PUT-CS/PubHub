@@ -15,6 +15,8 @@ class SocketAddress {
     SocketAddress(std::string ip, short unsigned port);
     auto inner() -> std::shared_ptr<sockaddr_in>;
 
+    std::string fmt();
+
   private:
     sockaddr_in _inner;
 };

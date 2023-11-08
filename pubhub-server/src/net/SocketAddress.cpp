@@ -26,3 +26,7 @@ SocketAddress::SocketAddress(sockaddr_in addr) {
 auto SocketAddress::inner() -> std::shared_ptr<sockaddr_in> {
     return std::make_shared<sockaddr_in>(this->_inner);
 }
+
+std::string SocketAddress::fmt() {
+    return this->ip + ":" + std::to_string(this->port);
+}

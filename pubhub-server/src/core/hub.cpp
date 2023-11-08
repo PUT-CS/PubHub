@@ -2,12 +2,12 @@
 #include "../net/ServerSocket.hpp"
 #include "client.hpp"
 #include "queue.hpp"
+#include <cstdio>
 #include <iostream>
 #include <memory>
+#include <sys/poll.h>
 #include <utility>
 #include <vector>
-
-std::vector<int> fds;
 
 Hub::Hub(SocketAddress addr) {
     this->socket = new ServerSocket(addr);
@@ -16,31 +16,48 @@ Hub::Hub(SocketAddress addr) {
 }
 
 void Hub::run() {
-    // Accept all clients
     while (true) {
+        this->debugLogClients();
         this->accept();
         logInfo("Ready to accept next Client");
     }
 }
 
 void Hub::accept() {
-    // get the ClientSocket
-    auto client_socket = this->socket->accept();
-    logInfo("Got a new ClientSocket");
-    logInfo(client_socket.get().fd);
+    auto client_socket = this->socket->accept().unwrap();
+    logInfo("New connection from " + client_socket.address()->fmt());
 
-    fds.push_back(client_socket.get().fd);
-    // this->clients.push_back({std::move(Client(client_socket.get())),
-    // std::vector<QueuePtr>{}});
-    for (int fd : fds) {
-        std::cout << "fd: " << fd << "\n";
+    auto client = Client(client_socket);
+
+    this->addClient(client);
+
+    logInfo("Added Client: " + client.fmt());
+}
+
+void Hub::addClient(Client client) {
+    // Add Client to the pollfd vector for polling events
+    pollfd poll_fd = {client.getFd(), POLLIN, 0};
+    this->poll_fds.push_back(poll_fd);
+
+    // Add Client to the general Client vec
+    this->clients.push_back(std::make_pair(client, std::vector<QueuePtr>{}));
+}
+
+void Hub::removeClient(int fd) {
+    (void)fd;
+    puts("Unimplemented");
+    exit(1);
+}
+
+void Hub::debugLogClients() {
+    if (this->clients.empty()) {
+        print("No Clients");
+        return;
     }
-    // for (auto& pair : this->clients) {
-    //     std::cout<< "CLIENT: " << pair.first.socket.address()->port << " " <<
-    //     pair.first.socket.fd << std::endl;
-    // }
-
-    logInfo("Added client");
+    print("Current Clients:");
+    for (auto& client : this->clients) {
+        print(client.first.fmt());
+    }
 }
 
 Hub::~Hub() {

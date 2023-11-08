@@ -13,6 +13,13 @@ ClientSocket::ClientSocket(FileDescriptor fd, SocketAddress addr) {
     this->fd = fd;
 }
 
+std::string ClientSocket::fmt() {
+    return "CLIENT SOCKET:\nFD: " + std::to_string(this->fd) +
+        " ADDRESS: " + this->address()->ip
+        + ":" +
+        std::to_string(this->address()->port);
+}
+
 auto ClientSocket::connect() -> Result<None> {
     int err = ::connect(this->fd, (sockaddr *)&(*this->addr.inner()),
                         sizeof(this->addr.inner()));
