@@ -1,0 +1,57 @@
+* PubHub
+** Schemat
+*** Wątek zdarzeń
+1. Nasłuchuje nowych połączeń, akceptuje je i wprowadza Klienta do Systemu.
+2. Nasłuchuje zdarzeń przychodzących z gniazd Klientów i odpowiednio na nie reaguje
+*** Wątki robocze
+Są tworzone przez wątek zdarzeń na potrzeby obsługi zdarzeń. Zmieniają globalny stan Systemu (potrzebny muteks)
+
+** Moduły
+Projekt składa się z trzech modułów
+*** lib-pubhub
+Biblioteka udostępniająca klasy pozwalające na implementację serwera dla systemu "message broker".
+*** PubHub Server
+Serwer zarządzający Systemem.
+**** Funkcjonalności
+1. Rejestracja nowych Klientów
+2. Usuwanie Klientów, którzy zakończyli połączenie
+3. Obsługa żądań tworzenia Kanałów
+4. Obsługa żądań wysyłania Wiadomości
+5. Obsługa żądań subskrypcji
+*** PubHub Client
+Program umożliwiający używanie Systemu użytkownikowi.
+**** Funkcjonalności
+1. Połączenie z Serwerem
+2. Żądanie tworzenia nowych Kanałów
+3. Żądanie wysłania Wiadomości na dany Kanał
+4. Żądanie subskrypcji danego Kanału
+** Pseudokod Serwera
+#+BEGIN_SRC c
+
+  listen() {
+      loop {
+          map_clientvec_into_pollfds();
+          poll(); // block
+          handle_server_event();
+          handle_client_event();
+      }
+  }
+
+  handle_server_event() {
+      accept_connection();
+      create_client();
+      add_client_to_clientvec();
+  }
+
+  handle_client_event() {
+      thread::spawn([]{
+              handle_event();
+          });
+  }
+
+  handle_event() {
+      mutex_lock();
+      mutate_state();
+  }
+
+#+END_SRC
