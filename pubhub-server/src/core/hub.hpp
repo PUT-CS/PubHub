@@ -4,11 +4,11 @@
 #include "../net/ServerSocket.hpp"
 #include "client.hpp"
 #include "queue.hpp"
+#include "sys/poll.h"
 #include <map>
 #include <memory>
 #include <utility>
 #include <vector>
-#include "sys/poll.h"
 
 class Hub {
   private:
@@ -19,19 +19,27 @@ class Hub {
     SocketAddress addr;
     ServerSocket *socket;
 
+    /**
+       Holds all pollfds needed to check for socket activity.
+       The first pollfd in this vector shall always be the server pollfd.
+       Every time a client connects or disconnects this has to be updated
+     **/
     std::vector<pollfd> poll_fds;
 
   public:
     Hub(SocketAddress);
     void run();
+    void handleNextEvent();
     void listen();
     void accept();
 
     void addClient(Client);
     void removeClient(int fd);
+    Client* clientByFd(FileDescriptor fd);
 
     void debugLogClients();
-        
+    void debugLogPollFds();
+
     ~Hub();
 };
 
