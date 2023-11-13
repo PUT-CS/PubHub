@@ -7,6 +7,7 @@
 #include "sys/poll.h"
 #include <map>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -14,6 +15,7 @@ class Hub {
   private:
     typedef std::shared_ptr<Queue> QueuePtr;
     typedef std::vector<QueuePtr> ClientQueues;
+    
     std::vector<std::pair<Client, ClientQueues>> clients;
     std::vector<Queue> queues;
     SocketAddress addr;
@@ -34,8 +36,8 @@ class Hub {
     void accept();
 
     void addClient(Client);
-    void removeClient(int fd);
-    Client* clientByFd(FileDescriptor fd);
+    void removeClientByFd(FileDescriptor);
+    auto clientByFd(FileDescriptor) -> std::optional<std::shared_ptr<Client>>;
 
     void debugLogClients();
     void debugLogPollFds();

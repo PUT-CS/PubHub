@@ -9,7 +9,7 @@
 
 template <typename T> class Result {
   public:
-    Result<T>() : _data_(), _is_error_(true) {}
+    Result() : _data_(), _is_error_(true) {}
 
     bool is_error() const { return this->_is_error_; }
 

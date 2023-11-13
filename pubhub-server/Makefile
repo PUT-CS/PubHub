@@ -1,6 +1,6 @@
 # Compiler and compiler flags
 CC = g++
-CCFLAGS = -Wall -Wextra
+CCFLAGS = -Wall -Wextra -std=c++20
 
 # Directories
 SRC_DIR = src
