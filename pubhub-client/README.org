@@ -1,0 +1,2 @@
+* How to download Boost library
+[[https://linux.how2shout.com/how-to-install-boost-c-on-ubuntu-20-04-or-22-04/][Boost library on Ubuntu]]
