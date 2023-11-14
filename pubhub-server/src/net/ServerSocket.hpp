@@ -10,9 +10,9 @@
 class ServerSocket : public Socket {
   public:
     ServerSocket(SocketAddress);
-    auto bind() -> Result<None>;
-    auto listen() -> Result<None>;
-    auto accept() -> Result<ClientSocket>;
+    void bind();
+    void listen();
+    ClientSocket accept();
     ~ServerSocket(){};
 };
 

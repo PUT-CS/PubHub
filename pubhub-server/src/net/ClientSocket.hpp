@@ -11,9 +11,9 @@ class ClientSocket : public Socket {
     ClientSocket(SocketAddress);
     ClientSocket();
     ClientSocket(FileDescriptor, SocketAddress);
-    auto connect() -> Result<None>;
+    void connect();
 
-    std::string fmt();
+    std::string fmt() noexcept;
     
     ~ClientSocket(){};
 };

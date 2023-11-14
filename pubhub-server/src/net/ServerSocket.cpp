@@ -5,54 +5,52 @@
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include "exceptions.hpp"
 
 ServerSocket::ServerSocket(SocketAddress addr) {
     this->addr = addr;
     int enableReuseAddr = 1;
     this->create();
-    if (setsockopt(this->fd, SOL_SOCKET, SO_REUSEADDR, &enableReuseAddr,
-                   sizeof(int)) == -1) {
-        perror("setsockopt(SO_REUSEADDR) failed");
+    int res = setsockopt(this->fd, SOL_SOCKET, SO_REUSEADDR, &enableReuseAddr,
+                         sizeof(int));
+    if (res == -1) {
+        perror("setsockopt");
         this->close();
-        throw strerror(errno);
+        std::exit(1);
     }
 }
 
-auto ServerSocket::bind() -> Result<None> {
+void ServerSocket::bind() {
     int res = ::bind(this->fd, (sockaddr *)&(*this->addr.inner()),
                      sizeof(this->addr.inner()));
     if (res == -1) {
-        perror("Bind");
-        return Err<None>(PubHubError::Other);
+        throw NetworkException("Bind");
     }
-    return Ok(None{});
 }
 
-auto ServerSocket::listen() -> Result<None> {
+void ServerSocket::listen() {
     int res = ::listen(this->fd, SOMAXCONN);
     if (res == -1) {
-        perror("Listen");
-        return Err<None>(PubHubError::Other);
+        throw NetworkException("Listen");
     }
-    
-    return Ok(None{});
 }
 
-auto ServerSocket::accept() -> Result<ClientSocket> {
+ClientSocket ServerSocket::accept() {
     sockaddr_in new_addr;
     socklen_t addrlen = sizeof(new_addr);
     
     int client_fd = ::accept(this->fd, (sockaddr*)&new_addr, &addrlen);
     if (client_fd == -1) {
-        perror("Accept failed");
+        throw NetworkException("Accept");
     }
 
     auto client_addr = SocketAddress(new_addr);
     
-    return Ok(ClientSocket(client_fd, client_addr));
+    return ClientSocket(client_fd, client_addr);
 }
 

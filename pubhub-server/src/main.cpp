@@ -4,7 +4,10 @@
 #include "core/client.hpp"
 #include "core/hub.hpp"
 #include "core/queue.hpp"
+#include <cstdlib>
 #include <iostream>
+#include <stop_token>
+#include "net/exceptions.hpp"
 
 int main() {
     logInfo("Starting the PubHub Server...");

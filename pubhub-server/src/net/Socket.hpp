@@ -13,16 +13,15 @@ class Socket {
 
   public:
     FileDescriptor fd;
-    auto create() -> Result<None>;
-    auto receive() -> Result<Message>;
-    auto send(Message msg) -> Result<None>;
+    
+    void create();
+    std::string receive();
+    void send(Message msg);
     auto address() -> SocketAddress*;
     void shutdown();
     void close();
-    ~Socket(){
-        //this->shutdown();
-        //this->close();
-    };
+    
+    ~Socket(){};
 };
 
 #endif
