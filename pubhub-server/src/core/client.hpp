@@ -9,6 +9,10 @@ class Client {
     Client(ClientSocket);
     void subscribe();
     void unsubscribe();
+    FileDescriptor getFd();
+    void killConnection();
+    
+    std::string fmt();
 
     ~Client();
 };

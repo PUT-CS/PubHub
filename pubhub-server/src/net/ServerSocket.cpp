@@ -3,31 +3,39 @@
 #include "Socket.hpp"
 #include "SocketAddress.hpp"
 #include <arpa/inet.h>
+#include <cerrno>
 #include <cstdio>
+#include <cstring>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
 ServerSocket::ServerSocket(SocketAddress addr) {
     this->addr = addr;
+    int enableReuseAddr = 1;
     this->create();
+    if (setsockopt(this->fd, SOL_SOCKET, SO_REUSEADDR, &enableReuseAddr,
+                   sizeof(int)) == -1) {
+        perror("setsockopt(SO_REUSEADDR) failed");
+        this->close();
+        throw strerror(errno);
+    }
 }
 
 auto ServerSocket::bind() -> Result<None> {
-    int err = ::bind(this->fd, (sockaddr *)&(*this->addr.inner()),
+    int res = ::bind(this->fd, (sockaddr *)&(*this->addr.inner()),
                      sizeof(this->addr.inner()));
-    perror("Bind");
-    if (err == -1) {
+    if (res == -1) {
+        perror("Bind");
         return Err<None>(PubHubError::Other);
     }
     return Ok(None{});
 }
 
 auto ServerSocket::listen() -> Result<None> {
-    int err = ::listen(this->fd, SOMAXCONN);
-    
-    perror("Listen");
-    if (err == -1) {
+    int res = ::listen(this->fd, SOMAXCONN);
+    if (res == -1) {
+        perror("Listen");
         return Err<None>(PubHubError::Other);
     }
     
@@ -35,9 +43,6 @@ auto ServerSocket::listen() -> Result<None> {
 }
 
 auto ServerSocket::accept() -> Result<ClientSocket> {
-    logInfo("ACCEPTING");
-    printf("Server FD: %d\n", this->fd);
-
     sockaddr_in new_addr;
     socklen_t addrlen = sizeof(new_addr);
     
@@ -45,8 +50,6 @@ auto ServerSocket::accept() -> Result<ClientSocket> {
     if (client_fd == -1) {
         perror("Accept failed");
     }
-    
-    printf("Client FD: %d\n", client_fd);
 
     auto client_addr = SocketAddress(new_addr);
     

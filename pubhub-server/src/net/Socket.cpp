@@ -2,6 +2,7 @@
 #include "SocketAddress.hpp"
 #include <cerrno>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <string>
@@ -10,8 +11,8 @@
 
 auto Socket::create() -> Result<None> {
     auto fd = ::socket(AF_INET, SOCK_STREAM, 0);
-    perror("Socket");
     if (fd == -1) {
+        perror("Socket");
         // auto err = std::string("Create socket: ") + strerror(errno);
         return Err<None>(PubHubError::Other);
     }
@@ -26,7 +27,10 @@ auto Socket::receive() -> Result<Message> {
     int bytes_overall = 0;
     while (bytes_read != 0) {
         bytes_read = read(this->fd, buffer, sizeof(buffer));
-        perror("Read");
+        if (bytes_read == -1) {
+            perror("Read");
+            exit(1);
+        }
         bytes_overall += bytes_read;
     }
     print_n_from(buffer, bytes_overall);

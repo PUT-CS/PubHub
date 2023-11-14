@@ -9,11 +9,11 @@
 
 template <typename T> class Result {
   public:
-    Result<T>() : _data_(), _is_error_(true) {}
+    Result() : _data_(), _is_error_(true) {}
 
     bool is_error() const { return this->_is_error_; }
 
-    T &get() {
+    T &unwrap() {
         if (_is_error_) {
             //auto err = this->get_error().to_string();
             throw std::logic_error("Tried to get value from an error Result.");
