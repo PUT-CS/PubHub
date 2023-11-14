@@ -5,8 +5,6 @@
 #include "../common.hpp"
 #include "../myresult.hpp"
 
-typedef int FileDescriptor;
-
 class Socket {
   protected:
     SocketAddress addr;

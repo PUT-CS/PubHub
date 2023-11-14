@@ -3,8 +3,10 @@
 
 #include "../net/ServerSocket.hpp"
 #include "client.hpp"
+#include "event.hpp"
 #include "queue.hpp"
 #include "sys/poll.h"
+#include <bits/types/time_t.h>
 #include <map>
 #include <memory>
 #include <optional>
@@ -31,7 +33,7 @@ class Hub {
   public:
     Hub(SocketAddress);
     void run();
-    void handleNextEvent();
+    Event nextEvent(time_t);
     void listen();
     void accept();
 
