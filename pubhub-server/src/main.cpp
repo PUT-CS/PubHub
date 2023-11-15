@@ -5,6 +5,7 @@
 #include "core/hub.hpp"
 #include "core/queue.hpp"
 #include <cstdlib>
+#include <exception>
 #include <iostream>
 #include <stop_token>
 #include "net/exceptions.hpp"

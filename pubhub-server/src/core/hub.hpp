@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+
 class Hub {
   private:
     typedef std::shared_ptr<Queue> QueuePtr;
@@ -21,7 +22,7 @@ class Hub {
     std::vector<std::pair<Client, ClientQueues>> clients;
     std::vector<Queue> queues;
     SocketAddress addr;
-    ServerSocket *socket;
+    std::unique_ptr<ServerSocket> socket;
 
     /**
        Holds all pollfds needed to check for socket activity.
@@ -35,9 +36,9 @@ class Hub {
     void run();
     Event nextEvent(time_t);
     void listen();
-    void accept();
-
-    void addClient(Client);
+    Client accept();
+    
+    void addClient(Client) noexcept;
     void removeClientByFd(FileDescriptor);
     auto clientByFd(FileDescriptor) -> std::optional<std::shared_ptr<Client>>;
 

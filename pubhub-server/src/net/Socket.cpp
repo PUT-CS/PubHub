@@ -39,7 +39,7 @@ void Socket::send(Message msg) {
     throw NetworkException("unimplemented");
 };
 
-auto Socket::address() -> SocketAddress * { return &this->addr; }
+auto Socket::address() noexcept -> SocketAddress * const { return &this->addr; }
 
 void Socket::shutdown() {
     int res = ::shutdown(this->fd, SHUT_RDWR);
