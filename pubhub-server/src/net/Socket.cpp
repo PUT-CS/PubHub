@@ -8,6 +8,7 @@
 #include <string>
 #include <sys/socket.h>
 #include <unistd.h>
+#include "../core/message.hpp"
 
 auto Socket::create() -> Result<None> {
     auto fd = ::socket(AF_INET, SOCK_STREAM, 0);

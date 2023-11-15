@@ -4,6 +4,7 @@
 #include "SocketAddress.hpp"
 #include "../common.hpp"
 #include "../myresult.hpp"
+#include "../core/message.hpp"
 
 typedef int FileDescriptor;
 

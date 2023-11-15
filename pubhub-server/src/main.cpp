@@ -5,6 +5,7 @@
 #include "core/hub.hpp"
 #include "core/queue.hpp"
 #include <iostream>
+#include "core/message.hpp"
 
 int main() {
     logInfo("Starting the PubHub Server...");

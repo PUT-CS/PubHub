@@ -1,5 +1,8 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
+#include "../common.hpp"
+#include <string>
+#include "../../include/json.hpp"
 
 enum MessageKind {
     SUBSCRIBE,
@@ -7,7 +10,7 @@ enum MessageKind {
     CREATE_CHANNEL,
     DELETE_CHANNEL,
     PUBLISH,
-    ERROR
+    MESSAGE_ERROR
 };
 
 /**
@@ -30,7 +33,14 @@ enum MessageKind {
    PUBLISH - name of the channel and post content separated by a semicolon
  **/
 class Message {
-    
+private:
+    std::time_t expiration;
+    unsigned short size;
+    MessageKind kind;
+    std::string content;
+public:
+    Message(unsigned short size, MessageKind kind, nlohmann::json content);
+    ~Message();
 };
 
 #endif
