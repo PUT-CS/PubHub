@@ -15,9 +15,6 @@ typedef struct {
 
 std::ostream &operator<<(std::ostream &os, const None &_);
 
-typedef struct {
-} Message;
-
 typedef enum  {
     Other
 } PubHubError;

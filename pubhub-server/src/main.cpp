@@ -1,3 +1,4 @@
+#include <iostream>
 #include "libpubhub/common.hpp"
 #include "libpubhub/net/SocketAddress.hpp"
 #include "libpubhub/server/hub.hpp"

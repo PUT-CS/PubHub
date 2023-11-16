@@ -3,6 +3,7 @@
 
 #include "../net/ServerSocket.hpp"
 #include "client.hpp"
+#include "message.hpp"
 #include "event.hpp"
 #include "queue.hpp"
 #include "sys/poll.h"

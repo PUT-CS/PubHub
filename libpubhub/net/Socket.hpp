@@ -3,6 +3,7 @@
 
 #include "SocketAddress.hpp"
 #include "../common.hpp"
+#include "../server/message.hpp"
 
 class Socket {
   protected:
@@ -16,7 +17,7 @@ class Socket {
     void create();
     std::string receive();
     void send(Message msg);
-    auto address() noexcept -> SocketAddress* const;
+    auto address() noexcept -> SocketAddress*;
     void shutdown();
     void close();
     

@@ -8,6 +8,7 @@
 #include <string>
 #include <sys/socket.h>
 #include <unistd.h>
+#include "../server/message.hpp"
 #include "exceptions.hpp"
 
 void Socket::create() {
