@@ -16,7 +16,7 @@ class Socket {
     
     void create();
     std::string receive();
-    void send(Message msg);
+    void send(Payload &msg);
     auto address() noexcept -> SocketAddress*;
     void shutdown();
     void close();

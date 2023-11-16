@@ -35,12 +35,12 @@ std::string Socket::receive() {
     return std::string(buffer);
 };
 
-void Socket::send(Message msg) {
+void Socket::send(Payload &msg) {
     (void)msg;
     throw NetworkException("unimplemented");
 };
 
-auto Socket::address() noexcept -> SocketAddress * const { return &this->addr; }
+auto Socket::address() noexcept -> SocketAddress * { return &this->addr; }
 
 void Socket::shutdown() {
     int res = ::shutdown(this->fd, SHUT_RDWR);
