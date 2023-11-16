@@ -3,6 +3,7 @@
 
 #include "client.hpp"
 #include <deque>
+#include <vector>
 
 class Queue {
     private:

@@ -1,19 +1,18 @@
-#ifndef CLIENT_SOCKET
-#define CLIENT_SOCKET
+#ifndef CLIENT_SOCKET_H
+#define CLIENT_SOCKET_H
 
 #include "Socket.hpp"
 #include "SocketAddress.hpp"
 #include "../common.hpp"
-#include "../myresult.hpp"
 
 class ClientSocket : public Socket {
   public:
     ClientSocket(SocketAddress);
     ClientSocket();
     ClientSocket(FileDescriptor, SocketAddress);
-    auto connect() -> Result<None>;
+    void connect();
 
-    std::string fmt();
+    std::string fmt() noexcept;
     
     ~ClientSocket(){};
 };

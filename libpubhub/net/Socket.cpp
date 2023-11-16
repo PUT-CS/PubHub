@@ -8,41 +8,48 @@
 #include <string>
 #include <sys/socket.h>
 #include <unistd.h>
+#include "exceptions.hpp"
 
-auto Socket::create() -> Result<None> {
+void Socket::create() {
     auto fd = ::socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1) {
-        perror("Socket");
-        // auto err = std::string("Create socket: ") + strerror(errno);
-        return Err<None>(PubHubError::Other);
+        throw NetworkException("Socket");
     }
     this->fd = fd;
     this->created = true;
-    return Ok(None{});
 };
 
-auto Socket::receive() -> Result<Message> {
+std::string Socket::receive() {
     char buffer[this->buffer_size];
     int bytes_read = 1;
     int bytes_overall = 0;
     while (bytes_read != 0) {
         bytes_read = read(this->fd, buffer, sizeof(buffer));
         if (bytes_read == -1) {
-            perror("Read");
-            exit(1);
+            throw NetworkException("Read");
         }
         bytes_overall += bytes_read;
     }
     print_n_from(buffer, bytes_overall);
-    return Err<Message>(PubHubError::Other);
+    return std::string(buffer);
 };
 
-auto Socket::send(Message msg) -> Result<None> {
+void Socket::send(Message msg) {
     (void)msg;
-    return Ok(None{});
+    throw NetworkException("unimplemented");
 };
 
-auto Socket::address() -> SocketAddress * { return &this->addr; }
+auto Socket::address() noexcept -> SocketAddress * const { return &this->addr; }
 
-void Socket::shutdown() { ::shutdown(this->fd, SHUT_RDWR); }
-void Socket::close() { ::close(this->fd); }
+void Socket::shutdown() {
+    int res = ::shutdown(this->fd, SHUT_RDWR);
+    if (res == -1) {
+        throw NetworkException("Shutdown");
+    }
+}
+void Socket::close() {
+    int res = ::close(this->fd);
+    if (res == -1) {
+        throw NetworkException("Close");
+    }
+}

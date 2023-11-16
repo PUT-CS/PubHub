@@ -1,15 +1,15 @@
-#ifndef HUB
-#define HUB
+#ifndef HUB_H
+#define HUB_H
 
 #include "../net/ServerSocket.hpp"
 #include "client.hpp"
+#include "event.hpp"
 #include "queue.hpp"
 #include "sys/poll.h"
-#include <map>
-#include <memory>
+#include <bits/types/time_t.h>
 #include <optional>
-#include <utility>
 #include <vector>
+
 
 class Hub {
   private:
@@ -19,7 +19,7 @@ class Hub {
     std::vector<std::pair<Client, ClientQueues>> clients;
     std::vector<Queue> queues;
     SocketAddress addr;
-    ServerSocket *socket;
+    std::unique_ptr<ServerSocket> socket;
 
     /**
        Holds all pollfds needed to check for socket activity.
@@ -31,11 +31,11 @@ class Hub {
   public:
     Hub(SocketAddress);
     void run();
-    void handleNextEvent();
+    Event nextEvent(time_t);
     void listen();
-    void accept();
-
-    void addClient(Client);
+    Client accept();
+    
+    void addClient(Client) noexcept;
     void removeClientByFd(FileDescriptor);
     auto clientByFd(FileDescriptor) -> std::optional<std::shared_ptr<Client>>;
 

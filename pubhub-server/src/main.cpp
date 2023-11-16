@@ -1,10 +1,6 @@
-#include "common.hpp"
-#include "myresult.hpp"
-#include "net/SocketAddress.hpp"
-#include "core/client.hpp"
-#include "core/hub.hpp"
-#include "core/queue.hpp"
-#include <iostream>
+#include "libpubhub/common.hpp"
+#include "libpubhub/net/SocketAddress.hpp"
+#include "libpubhub/server/hub.hpp"
 
 int main() {
     logInfo("Starting the PubHub Server...");

@@ -8,6 +8,8 @@
 #include <ostream>
 #include <variant>
 
+typedef int FileDescriptor;
+
 typedef struct {
 } None;
 
@@ -72,7 +74,7 @@ void logMessage(LogLevel level, const T& message) {
     std::strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", timeInfo);
 
     // Log the message with the timestamp and colored log level
-    std::cout<< colorCode << "[" << timeStr << "]" << "[" << levelStr << "]" << ": " << message << resetColor << std::endl;
+    std::cerr<< colorCode << "[" << timeStr << "]" << "[" << levelStr << "]" << ": " << message << resetColor << std::endl;
 }
 
 template <typename T>

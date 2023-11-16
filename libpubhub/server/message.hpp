@@ -2,12 +2,12 @@
 #define MESSAGE_H
 
 enum MessageKind {
-    SUBSCRIBE,
-    UNSUBSCRIBE,
-    CREATE_CHANNEL,
-    DELETE_CHANNEL,
-    PUBLISH,
-    ERROR
+    Subscribe,
+    Unsubscribe,
+    CreateChannel,
+    DeleteChannel,
+    Publish,
+    Error
 };
 
 /**
