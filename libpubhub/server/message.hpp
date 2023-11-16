@@ -3,16 +3,16 @@
 #include "../common.hpp"
 #include <ctime>
 #include <string>
-#include "../../include/json.hpp"
+#include "../json.hpp"
 #include <bitset>
 
 enum PayloadKind {
-    SUBSCRIBE,
-    UNSUBSCRIBE,
-    CREATE_CHANNEL,
-    DELETE_CHANNEL,
-    PUBLISH,
-    MESSAGE_ERROR
+    Subscribe,
+    Unsubscribe,
+    CreateChannel,
+    DeleteChannel,
+    Publish,
+    Error
 };
 
 enum HubError {
@@ -64,25 +64,25 @@ class PublishPayload : Payload {
 //    CREATE_CHANNEL, DELETE_CHANNEL - name of the channel,
 //    PUBLISH - name of the channel and post content separated by a semicolon
 //  **/
-// class Message {
-// private:
-//     unsigned short size;
-//     MessageKind kind;
-//     //std::time_t expiration;
-//     std::string content;
-// public:
-//     Message(MessageKind, std::string);
-//     std::string serialize();
-//     // static Message PublishTo(long valid_for, nlohmann::json content) {
-//     // 	auto m = Message();
-//     // 	m.expiration = std::time(0) + valid_for;
-//     // 	m.content = content.dump();
-//     // 	m.size = 0;
-//     // }
-//     static Message Error(HubError, std::string what);
+class Message {
+private:
+    unsigned short size;
+    PayloadKind kind;
+    //std::time_t expiration;
+    std::string content;
+public:
+    Message(PayloadKind, std::string);
+    std::string serialize();
+    // static Message PublishTo(long valid_for, nlohmann::json content) {
+    // 	auto m = Message();
+    // 	m.expiration = std::time(0) + valid_for;
+    // 	m.content = content.dump();
+    // 	m.size = 0;
+    // }
+    static Message Error(HubError, std::string what);
     
     
-//     ~Message();
-// };
+    ~Message();
+};
 
 #endif

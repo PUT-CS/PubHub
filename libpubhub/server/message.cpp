@@ -11,7 +11,7 @@ std::string Message::serialize() {
     return serialized_message;
 }
 
-Message::Message(MessageKind kind, std::string content) {
+Message::Message(PayloadKind kind, std::string content) {
     this->kind = kind;
     std::cout << "Input message content: ";
     std::cin >> this->content;

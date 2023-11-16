@@ -1,5 +1,5 @@
-#ifndef SOCKET_ADDRESS
-#define SOCKET_ADDRESS
+#ifndef SOCKET_ADDRESS_H
+#define SOCKET_ADDRESS_H
 
 #include <arpa/inet.h>
 #include <memory>

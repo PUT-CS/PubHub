@@ -1,5 +1,5 @@
-#ifndef CLIENT
-#define CLIENT
+#ifndef CLIENT_H
+#define CLIENT_H
 #include "../net/ClientSocket.hpp"
 
 class Client {
