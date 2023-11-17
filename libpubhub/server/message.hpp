@@ -90,6 +90,7 @@ private:
     std::string content;
 public:
     Message(PayloadKind, std::string);
+    Message() {}
     std::string serialize();
     // static Message PublishTo(long valid_for, nlohmann::json content) {
     // 	auto m = Message();
@@ -98,9 +99,9 @@ public:
     // 	m.size = 0;
     // }
     static Message Error(HubError, std::string what);
+    ~Message() {}
     
     
-    ~Message();
 };
 
 #endif

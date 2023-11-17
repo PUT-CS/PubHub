@@ -1,7 +1,6 @@
 #include "message.hpp"
 
 UtilityPayload::UtilityPayload(PayloadKind kind, std::string content) {
-    static_assert(kind != PayloadKind::Publish && kind != PayloadKind::Error, "DUPA!");
 }
 
 UtilityPayload UtilityPayload::fromString(std::string) {
