@@ -1,20 +1,30 @@
 #include "message.hpp"
 
-std::string Message::serialize() {
-    std::string serialized_message;
-    std::bitset<sizeof(unsigned short) * 8> bitsize(this->size);
-    serialized_message += bitsize.to_string();
-    std::bitset<sizeof(int) * 8> bitkind(this->size);
-    serialized_message += bitkind.to_string();
-    serialized_message += this->content;
+UtilityPayload::UtilityPayload(PayloadKind kind, std::string content) {
+    static_assert(kind != PayloadKind::Publish && kind != PayloadKind::Error, "DUPA!");
+}
+
+UtilityPayload UtilityPayload::fromString(std::string) {
     
-    return serialized_message;
 }
 
-Message::Message(PayloadKind kind, std::string content) {
-    this->kind = kind;
-    std::cout << "Input message content: ";
-    std::cin >> this->content;
+std::string UtilityPayload::toString(){}
+
+
+PublishPayload::PublishPayload(std::string channel, long valid_for,
+                               nlohmann::json content) {}
+
+PublishPayload PublishPayload::fromString(std::string) { 
+    
 }
 
-Message::~Message() {}
+std::string PublishPayload::toString() {}
+
+
+BroadcastPayload::BroadcastPayload(PublishPayload) {}
+
+BroadcastPayload BroadcastPayload::fromString(std::string) { 
+    
+}
+
+std::string BroadcastPayload::toString(){}
