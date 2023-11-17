@@ -30,12 +30,16 @@ protected:
 
 // nie moze byc publish ani error
 // size | kind (!publish && !error) | {target: "ChannelName"}
+template <PayloadKind K>
 class UtilityPayload : Payload {
     private:
     std::string content;
     PayloadKind kind;
 public:
-    UtilityPayload(PayloadKind, std::string);
+    UtilityPayload(std::string s) {
+        static_assert(K != Publish && K != Error, "Invalid UtilityPayload kind");
+        //...
+    }
     static UtilityPayload fromString(std::string);
     std::string toString() override;
 };
