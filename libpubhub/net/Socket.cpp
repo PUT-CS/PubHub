@@ -42,6 +42,14 @@ void Socket::send(Payload &msg) {
 
 auto Socket::address() noexcept -> SocketAddress * { return &this->addr; }
 
+void Socket::kill() {
+    int s = ::shutdown(this->fd, SHUT_RDWR);
+    int c = ::close(this->fd);
+    if (!s) {
+        throw NetworkException("Shutdown or Close");
+    }
+}
+
 void Socket::shutdown() {
     int res = ::shutdown(this->fd, SHUT_RDWR);
     if (res == -1) {

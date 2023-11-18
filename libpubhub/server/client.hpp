@@ -10,7 +10,7 @@ class Client {
     void subscribe();
     void unsubscribe();
     FileDescriptor getFd();
-    void killConnection();
+    void killConnection() noexcept;
     
     std::string fmt();
 
