@@ -1,21 +1,17 @@
 #include "hub.hpp"
 #include "../net/ServerSocket.hpp"
 #include "../net/exceptions.hpp"
-#include "exceptions.hpp"
 #include "client.hpp"
 #include "event.hpp"
+#include "exceptions.hpp"
 #include <algorithm>
 #include <bits/types/time_t.h>
 #include <cstdio>
 #include <cstdlib>
 #include <exception>
 #include <iostream>
-#include <memory>
-#include <stdexcept>
 #include <string>
 #include <sys/poll.h>
-#include <utility>
-#include <vector>
 
 /// Create the Hub. Initializes the server socket and the first pollfd.
 Hub::Hub(SocketAddress addr) {
@@ -26,67 +22,45 @@ Hub::Hub(SocketAddress addr) {
     pollfd server_pollfd = {this->socket->fd,
                             POLLIN | POLLHUP | POLLERR | POLLNVAL, 0};
     this->poll_fds.push_back(server_pollfd);
-    logInfo("Registered server pollfd");
-}
-
-void Hub::run() {
-    while (true) {
-        auto event = this->nextEvent(-1);
-    }
 }
 
 /**
-   Wait for the next event on either the server or one of the clients
+   Wait for the next event on either the server or one of the clients.
+
+   Throws NetworkException if `poll` fails.
  **/
 Event Hub::nextEvent(time_t timeout) {
     int n_of_events =
         poll(this->poll_fds.data(), this->poll_fds.size(), timeout);
-    
+
     if (n_of_events == -1) {
-        perror("Poll");
-        throw "...";
+        throw NetworkException("Poll");
     }
 
     // Handle a server input event
-    if (poll_fds[0].revents & POLLIN) {
-        auto client = this->accept();
-        this->addClient(client);
-        logInfo("Added Client: " + client.fmt());
-        return Event(EventKind::ConnectionRequest, poll_fds[0].fd);
+    if (poll_fds[0].revents & Hub::POLL_INPUT) {
+        return Event{EventKind::ConnectionRequest, poll_fds[0].fd};
     }
 
     // Look for a client with an event
     for (long unsigned int i = 1; i < clients.size() + 1; i++) {
-        auto pfd = &this->poll_fds[i];
-        std::string cfd = std::to_string(pfd->fd);
+        const auto pfd = &this->poll_fds[i];
 
         if (!pfd->revents) {
             continue;
         }
 
         // Connection to the client was distrupted for some reason
-        if (pfd->revents & (POLLERR | POLLNVAL | POLLHUP | POLLRDHUP)) {
-            logWarn("Client disconnected: " + cfd);
-            this->removeClientByFd(pfd->fd);
-            return Event(EventKind::Disconnect, pfd->fd);
+        if (pfd->revents & Hub::POLL_ERROR) {
+            return Event{EventKind::Disconnect, pfd->fd};
         }
 
         // Client sent data and it's ready to read
-        if (pfd->revents & POLLIN) {
-            char buf[16] = {};
-            int n = recv(pfd->fd, buf, 16, 0);
-            if (n == -1) {
-                perror("Recv");
-            }
-            auto msg = std::string(buf);
-            if (msg.ends_with('\n')) {
-                msg.pop_back();
-            }
-            logInfo("Received from " + cfd + ": " + msg);
-            return Event(EventKind::Input, pfd->fd);
+        if (pfd->revents & Hub::POLL_INPUT) {
+            return Event{EventKind::Input, pfd->fd};
         }
     }
-    return Event(EventKind::Nil, -1);
+    return Event{EventKind::Nil};
 }
 
 Client Hub::accept() {
@@ -109,16 +83,8 @@ void Hub::removeClientByFd(int fd) {
         throw ClientException("No client with FD = " + std::to_string(fd));
     }
 
-    /*
-      ignore the possible shutdown exception,
-      client may have already disconnected on their own
-      and we just need to clean up.
-    */
-    try {
-        client.value().get()->killConnection();
-    } catch (...) {
-    }
-
+    client.value().get()->killConnection();
+ 
     // Erase the client from the standard list of clients
     std::erase_if(this->clients,
                   [=](auto &pair) { return pair.first.getFd() == fd; });
@@ -162,6 +128,4 @@ void Hub::debugLogPollFds() {
     }
 }
 
-Hub::~Hub() {
-    logWarn("Dropping Hub");
-}
+Hub::~Hub() { logWarn("Dropping Hub"); }

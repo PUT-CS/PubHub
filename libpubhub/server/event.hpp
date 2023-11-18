@@ -3,6 +3,7 @@
 
 #include "../common.hpp"
 
+// Maybe `enum class` later?
 enum EventKind {
     Input,
     Disconnect,
@@ -15,12 +16,16 @@ enum EventKind {
    Describes an event in the event loop
    and indicates what happened and for which client
 **/
-class Event {
-  public:
+struct Event {
     EventKind kind;
-    int clientFd;
-
-    Event(EventKind kind, FileDescriptor fd) : kind(kind), clientFd(fd) {}
+    FileDescriptor fd;
 };
+// class Event {
+//   public:
+//     EventKind kind;
+//     int clientFd;
+
+//     Event(EventKind kind, FileDescriptor fd) : kind(kind), clientFd(fd) {}
+// };
 
 #endif
