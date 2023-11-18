@@ -2,12 +2,13 @@
 #define QUEUE
 
 #include "client.hpp"
+#include "message.hpp"
 #include <deque>
 #include <vector>
 
 class Queue {
     private:
-    std::deque<Message> messages;
+    std::deque<Payload> messages;
     std::vector<Client> subscribers;
     
     public:
