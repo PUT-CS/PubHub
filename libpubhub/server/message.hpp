@@ -23,55 +23,111 @@ enum HubError {
 };
 
 class Payload {
-    public:
+protected:
+    nlohmann::json content;
+    unsigned short size;
+public:
     virtual std::string toString() = 0;
 };
 
-// nie moze byc publish ani error
-// size | kind (!publish && !error) | {target: "ChannelName"}
 template <PayloadKind K>
 class UtilityPayload : Payload {
-private:
-    nlohmann::json content;    
 public:
-    UtilityPayload(std::string  s) {
+    /**
+       size | kind (!publish && !error) | {target: ""}
+    **/
+    UtilityPayload(std::string  content) {
 	static_assert(K != Publish && K != Error, "Invalid UtilityPayload kind");
 	this->content = {
-	    {"target", s}
+	    {"target", content}
 	};
     }
-    static UtilityPayload fromString(std::string);
+
+    // static UtilityPayload fromString(std::string text) {
+    // 	UtilityPayload<K> uPl;
+    // 	uPl.size = binaryStringToNumber<unsigned short>(text.substr(0, 16));
+	
+    // }
+
+    /**
+     metoda ta zwraca stringa z calym payloadem jako string
+     
+     size jest obliczany zanim zostanie doklejony na poczatku finalnego stringa
+    **/
     std::string toString() override {
-	return this->content.dump();
+	std::string payload;
+	payload += std::to_string(K) + " " + content.dump();
+	this->size = payload.size();
+	payload = std::to_string(this->size) + " " + payload;
+	return payload;
     }
 };
 
-// moze byc tylko publish
-// size | kind (publish) | {expiration: 3, content: {}}
 template <PayloadKind K>
 class PublishPayload : Payload {
 private:
     std::string channel;
-    nlohmann::json content;
 public:
+    /**
+       size | kind (publish) | {expiration: long, content: {}}
+    **/
     PublishPayload(std::string channel, long valid_for,
 		   nlohmann::json content) {
-	static_assert(K == Publish, "Invalid Publish");
+	static_assert(K == Publish, "Invalid PublishPayload kind");
 	this->channel = channel;
+	this->content = {
+	    {"expiration", valid_for},
+	    {"content", content}
+	};
     }
-    static PublishPayload fromString(std::string);
-    std::string toString() override;
+    
+    nlohmann::json get_content() {
+	return this->content;
+    }
+
+    // static PublishPayload fromString(std::string) {
+	
+    // }
+
+    /**
+     metoda ta zwraca stringa z calym payloadem jako string
+     
+     size jest obliczany zanim zostanie doklejony na poczatku finalnego stringa
+    **/
+    std::string toString() override {
+	std::string payload;
+	payload += std::to_string(K) + " " + content.dump();
+	this->size = payload.size();
+	payload = std::to_string(this->size) + " " + payload;
+	return payload;
+    }
 };
 
-// przesylany subskrybentom
-// size | {expiration: 3, content: {}}
 class BroadcastPayload : Payload {
-private:
-    std::string content;
 public:
-    BroadcastPayload(PublishPayload<Publish>);
-    static BroadcastPayload fromString(std::string);
-    std::string toString() override;
+    /**
+       size | {expiration: long, content: {}}
+    **/
+    BroadcastPayload(PublishPayload<Publish> ppayload) {
+	this->content = ppayload.get_content();
+	this-> size = this->content.size();
+    }
+    
+    // static BroadcastPayload fromString(std::string) {
+	
+    // }
+    
+    /**
+       metoda ta zwraca stringa z calym payloadem jako string
+     
+       size jest obliczany zanim zostanie doklejony na poczatku finalnego stringa
+    **/
+    std::string toString() override {
+	std::string payload = content.dump();
+	this->size = payload.size();
+	payload = std::to_string(this->size) + payload;
+	return payload;
+    }
 };
 
 #endif
