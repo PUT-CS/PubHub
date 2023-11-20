@@ -126,6 +126,7 @@ class ErrorPayload : public Payload {
     ErrorPayload(const Payload &in_response_to, const HubError &what) {
         //...
     }
+
 };
 
 #endif
