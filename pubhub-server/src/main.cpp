@@ -1,7 +1,10 @@
+#include <iostream>
+#include <string>
 #include "libpubhub/common.hpp"
 #include "libpubhub/net/SocketAddress.hpp"
 #include "libpubhub/net/exceptions.hpp"
 #include "libpubhub/server/hub.hpp"
+#include "libpubhub/server/message.hpp"
 #include <algorithm>
 #include <csignal>
 #include <string>

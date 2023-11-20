@@ -7,6 +7,10 @@
 #include <iostream>
 #include <ostream>
 #include <variant>
+#include <iostream>
+#include <string>
+#include <ctime>
+#include <math.h>
 
 typedef int FileDescriptor;
 
@@ -33,10 +37,6 @@ template <typename T> void print_n_from(T arg[], size_t n) {
     }
     std::cout << "|STOP|" << std::endl;
 }
-
-#include <iostream>
-#include <string>
-#include <ctime>
 
 enum LogLevel { INFO, WARN, ERROR };
 
@@ -87,6 +87,29 @@ void logWarn(const T& message) {
 template <typename T>
 void logError(const T& message) {
     logMessage(ERROR, message);
+}
+
+template <typename T>
+T binaryStringToNumber(std::string binaryString) {
+    // Check if the input string is a valid binary string
+    for (char c : binaryString) {
+	if (c != '0' && c != '1') {
+	    throw std::invalid_argument("Invalid binary string.");
+	}
+    }
+	 
+    T intValue = 0;
+    T power = binaryString.length() - 1;
+	 
+    // Convert the binary string to its integer value
+    for (char c : binaryString) {
+	if (c == '1') {
+	    intValue += pow(2, power);
+	}
+	power--;
+    }
+	 
+    return intValue;
 }
 
 #endif
