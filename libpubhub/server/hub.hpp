@@ -5,33 +5,38 @@
 #include "client.hpp"
 #include "event.hpp"
 #include "message.hpp"
-#include "queue.hpp"
+#include "channel.hpp"
 #include "sys/poll.h"
+#include "types.hpp"
 #include <bits/types/time_t.h>
+#include <functional>
+#include <map>
 #include <optional>
 #include <sys/poll.h>
+#include <sys/types.h>
+#include <unordered_map>
 #include <vector>
 
 class Hub {
   private:
-    typedef std::shared_ptr<Queue> QueuePtr;
-    typedef std::vector<QueuePtr> ClientQueues;
-
     /**
        Holds all pollfds needed to check for socket activity.
        The first pollfd in this vector shall always be the server pollfd.
        Every time a client connects or disconnects this has to be updated
      **/
+    std::vector<pollfd> poll_fds;
 
   public:
     static const auto POLL_ERROR = POLLERR | POLLNVAL | POLLHUP | POLLRDHUP;
     static const auto POLL_INPUT = POLLIN;
 
-    std::vector<std::pair<Client, ClientQueues>> clients;
-    std::vector<Queue> queues;
+    /// ClientId is the Client's file descriptor
+    std::unordered_map<FileDescriptor, Client> clients;
+    std::unordered_map<ChannelId, Channel> channels;
+    
     SocketAddress addr;
     std::unique_ptr<ServerSocket> socket;
-    std::vector<pollfd> poll_fds;
+    
 
     Hub(SocketAddress);
     Event nextEvent(time_t);
@@ -40,7 +45,7 @@ class Hub {
 
     void addClient(Client) noexcept;
     void removeClientByFd(FileDescriptor);
-    auto clientByFd(FileDescriptor) -> std::optional<std::shared_ptr<Client>>;
+    auto clientByFd(FileDescriptor) -> std::optional<std::reference_wrapper<Client>>;
 
     void debugLogClients();
     void debugLogPollFds();

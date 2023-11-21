@@ -2,6 +2,7 @@
 #define SOCKET_ADDRESS_H
 
 #include <arpa/inet.h>
+#include <functional>
 #include <memory>
 #include <netinet/in.h>
 #include <string>
@@ -15,12 +16,12 @@ class SocketAddress {
     std::string ip;
     unsigned int port;
     
-    auto inner() -> std::shared_ptr<sockaddr_in>;
+    auto inner() -> std::reference_wrapper<sockaddr_in>;
 
     std::string fmt();
 
   private:
-    sockaddr_in _inner;
+    sockaddr_in inner_addr;
 };
 
 #endif

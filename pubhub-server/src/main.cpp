@@ -6,9 +6,7 @@
 #include "libpubhub/server/hub.hpp"
 #include "libpubhub/server/message.hpp"
 #include <algorithm>
-#include <csignal>
 #include <string>
-#include <thread>
 #include <vector>
 
 class MyServer {

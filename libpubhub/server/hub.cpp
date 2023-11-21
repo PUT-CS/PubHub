@@ -4,14 +4,19 @@
 #include "client.hpp"
 #include "event.hpp"
 #include "exceptions.hpp"
+#include "types.hpp"
 #include <algorithm>
 #include <bits/types/time_t.h>
 #include <cstdio>
 #include <cstdlib>
 #include <exception>
+#include <functional>
 #include <iostream>
+#include <optional>
+#include <stdexcept>
 #include <string>
 #include <sys/poll.h>
+#include <utility>
 
 /// Create the Hub. Initializes the server socket and the first pollfd.
 Hub::Hub(SocketAddress addr) {
@@ -20,7 +25,7 @@ Hub::Hub(SocketAddress addr) {
     this->socket->listen();
 
     pollfd server_pollfd = {this->socket->fd,
-                            POLLIN | POLLHUP | POLLERR | POLLNVAL, 0};
+                            Hub::POLL_INPUT | Hub::POLL_ERROR, 0};
     this->poll_fds.push_back(server_pollfd);
 }
 
@@ -70,40 +75,36 @@ Client Hub::accept() {
 
 void Hub::addClient(Client client) noexcept {
     // Add Client to the pollfd vector for polling events
-    pollfd poll_fd = {client.getFd(), POLLIN | POLLHUP | POLLERR, 0};
+    pollfd poll_fd = {client.getFd(), Hub::POLL_ERROR | Hub::POLL_INPUT, 0};
     this->poll_fds.push_back(poll_fd);
 
     // Add Client to the general Client vec
-    this->clients.push_back(std::make_pair(client, std::vector<QueuePtr>{}));
+    this->clients.insert({client.getFd(), client});
 }
 
 void Hub::removeClientByFd(int fd) {
-    auto client = this->clientByFd(fd);
-    if (!client.has_value()) {
+    auto client_opt = this->clientByFd(fd);
+    if (!client_opt.has_value()) {
         throw ClientException("No client with FD = " + std::to_string(fd));
     }
+    Client &client = client_opt->get();
 
-    client.value().get()->killConnection();
- 
+    client.killConnection();
+
     // Erase the client from the standard list of clients
-    std::erase_if(this->clients,
-                  [=](auto &pair) { return pair.first.getFd() == fd; });
+    this->clients.erase(client.getFd());
+
     // Erase the client's pollfd
-    std::erase_if(this->poll_fds, [=](pollfd &pfd) { return pfd.fd == fd; });
+    std::erase_if(this->poll_fds, [fd](pollfd &pfd) { return pfd.fd == fd; });
 }
 
-auto Hub::clientByFd(int fd) -> std::optional<std::shared_ptr<Client>> {
-    auto it = std::find_if(clients.begin(), clients.end(), [&](auto &pair) {
-        return pair.first.socket.fd == fd;
-    });
+auto Hub::clientByFd(int fd) -> std::optional<std::reference_wrapper<Client>> {
+    auto found = this->clients.find(fd);
 
-    if (it == this->clients.end()) {
+    if (found == this->clients.end()) {
         return std::nullopt;
     }
-
-    int idx = std::distance(clients.begin(), it);
-    auto ptr = std::make_shared<Client>(clients[idx].first);
-    return std::make_optional(ptr);
+    return std::reference_wrapper<Client>(found->second);
 }
 
 void Hub::debugLogClients() {
@@ -113,7 +114,7 @@ void Hub::debugLogClients() {
     }
     print("Current Clients:");
     for (auto &client : this->clients) {
-        print(client.first.fmt());
+        print(client.second.fmt());
     }
 }
 

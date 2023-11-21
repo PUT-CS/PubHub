@@ -1,8 +1,12 @@
 #include "client.hpp"
+#include "types.hpp"
 #include <cstdio>
 #include <string>
 
-Client::Client(ClientSocket socket) : socket(socket) {}
+Client::Client(ClientSocket socket) : socket(socket) {
+    static ClientId current = 0;
+    this->id = current++;
+}
 
 FileDescriptor Client::getFd() { return this->socket.fd; }
 

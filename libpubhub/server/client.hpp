@@ -1,12 +1,18 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 #include "../net/ClientSocket.hpp"
+#include "message.hpp"
+#include "types.hpp"
+#include <vector>
 
 class Client {
   public:
     ClientSocket socket;
     std::wstring nickname;
+    std::vector<ChannelId> subscriptions;
+    
     Client(ClientSocket);
+    
     void subscribe();
     void unsubscribe();
     FileDescriptor getFd();
@@ -16,9 +22,5 @@ class Client {
 
     ~Client();
 };
-
-inline bool operator<(const Client &lhs, const Client &rhs) {
-    return lhs.nickname < rhs.nickname;
-}
 
 #endif
