@@ -1,5 +1,4 @@
-bin/pubhub
-bin/client
+bin/
 
 # Prerequisites
 *.d

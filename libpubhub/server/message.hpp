@@ -35,23 +35,24 @@ size | json
     */  
 protected:
     // Number of characters that hold the message size, i.e. 0087 is 4
-    static const size_t SIZE_SPACE = 4;
-    
+    // static const size_t SIZE_SPACE = 4;
+    unsigned int size;
     nlohmann::json content;
 
 public:
     std::string toString() {
         std::string s = content.dump();
-        std::string size_str = Payload::padSize(s.size());
-        return size_str + s;
+        return s;
     }
-    
-    static std::string padSize(unsigned short int size) {
-        std::stringstream s;
-        s << std::setfill('0') << std::setw(Payload::SIZE_SPACE) << size;
-        (void)std::setfill(' ');
-        return s.str();
+    nlohmann::json getContent() const {
+        return this->content;
     }
+    // static std::string padSize(unsigned short int size) {
+    //     std::stringstream s;
+    //     s << std::setfill('0') << std::setw(Payload::SIZE_SPACE) << size;
+    //     (void)std::setfill(' ');
+    //     return s.str();
+    // }
 };
 
 template <PayloadKind K>
@@ -97,9 +98,9 @@ public:
 	};
     }
 
-    nlohmann::json getContent() {
-        return this->content;
-    }
+    // nlohmann::json getContent() {
+    //     return this->content;
+    // }
 
     std::string getChannel() {
         return this->content["channel"];

@@ -1,6 +1,7 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 #include "../net/ClientSocket.hpp"
+#include "message.hpp"
 
 class Client {
   public:
@@ -11,7 +12,8 @@ class Client {
     void unsubscribe();
     FileDescriptor getFd();
     void killConnection() noexcept;
-    
+    nlohmann::json receiveMessage();
+    void sendMessage(const Payload&);
     std::string fmt();
 
     ~Client();

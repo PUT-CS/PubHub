@@ -47,14 +47,18 @@ class MyServer {
     void handleInput(FileDescriptor fd) {
         // Look for a client with an event
         // Client sent data and it's ready to read
-
-        char buf[16] = {};
-        int n = recv(fd, buf, 16, 0);
-        if (n == -1) {
-            throw NetworkException("Recv");
-        }
-        
-        auto msg = std::string(buf);
+	auto client = hub.clientByFd(fd);
+	std::string buf;
+	if (client.has_value()) {
+	    buf = client.value()->receiveMessage().dump();
+	}
+	
+        // char buf[16] = {};
+        // int n = recv(fd, buf, 16, 0);
+        // if (n == -1) {
+        //     throw NetworkException("Recv");
+        // }
+        auto msg = buf;
         if (msg.ends_with('\n')) {
             msg.pop_back();
         }
