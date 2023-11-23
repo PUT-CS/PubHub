@@ -15,6 +15,13 @@
 
 template <typename T> void print(T obj) { std::cout << obj << std::endl; }
 
+template <typename T> void print_n_from(T arg[], size_t n) {
+    for (size_t i = 0; i < n; i++) {
+        std::cout << arg[i];
+    }
+    std::cout << "|STOP|" << std::endl;
+}
+
 enum LogLevel { INFO, WARN, ERROR };
 
 // Define logMessage at the beginning

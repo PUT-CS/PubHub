@@ -12,6 +12,7 @@
 #include <functional>
 #include <map>
 #include <optional>
+#include <string>
 #include <sys/poll.h>
 #include <sys/types.h>
 #include <unordered_map>
@@ -45,7 +46,12 @@ class Hub {
 
     void addClient(Client) noexcept;
     void removeClientByFd(FileDescriptor);
-    auto clientByFd(FileDescriptor) -> std::optional<std::reference_wrapper<Client>>;
+    auto clientByFd(FileDescriptor) -> Client&;
+
+    auto channelIdByName(ChannelName) -> ChannelId;
+
+    void addSubscription(ClientId, ChannelName);
+    void removeSubscription(ClientId, ChannelName);
 
     void debugLogClients();
     void debugLogPollFds();

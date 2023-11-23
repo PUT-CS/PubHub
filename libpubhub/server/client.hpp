@@ -3,18 +3,21 @@
 #include "../net/ClientSocket.hpp"
 #include "message.hpp"
 #include "types.hpp"
+#include <optional>
+#include <set>
+#include <unordered_map>
 #include <vector>
 
 class Client {
   public:
     ClientSocket socket;
-    std::wstring nickname;
-    std::vector<ChannelId> subscriptions;
-    
+    std::set<ChannelId> subscriptions;
+
+    Client();
     Client(ClientSocket);
     
-    void subscribe();
-    void unsubscribe();
+    void subscribeTo(ChannelId) noexcept;
+    void unsubscribeFrom(ChannelId) noexcept;
     FileDescriptor getFd();
     void killConnection() noexcept;
     

@@ -11,10 +11,16 @@ class ClientException : std::exception {
     std::string msg;
 
   public:
-    ClientException(const std::string& what) {
-        this->msg = what;
-    }
+    ClientException(const std::string &what) { this->msg = what; }
+    const char *what() const noexcept override { return msg.c_str(); }
+};
 
+class ChannelNotFoundException : std::exception {
+  private:
+    std::string msg;
+
+  public:
+    ChannelNotFoundException(const std::string &what) { msg = what; }
     const char *what() const noexcept override { return msg.c_str(); }
 };
 

@@ -124,6 +124,8 @@ class ErrorPayload : public Payload {
       }
      */
     ErrorPayload(const Payload &in_response_to, const HubError &what) {
+        (void)in_response_to;
+        (void)what;
         //...
     }
 

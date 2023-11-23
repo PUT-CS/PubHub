@@ -4,16 +4,22 @@
 #include "client.hpp"
 #include "message.hpp"
 #include "types.hpp"
+#include <optional>
+#include <set>
+#include <unordered_map>
 #include <vector>
 
 
 class Channel {
-    private:
-    std::vector<FileDescriptor> subscribers;
-    
     public:
+    ChannelName name;
+    std::set<ClientId> subscribers;
+    
     Channel();
-    ~Channel(){};
+    ~Channel();
+
+    void addSubscriber(ClientId) noexcept;
+    void removeSubscriber(ClientId) noexcept;
 };
 
 #endif

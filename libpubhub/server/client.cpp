@@ -1,14 +1,20 @@
 #include "client.hpp"
 #include "types.hpp"
 #include <cstdio>
+#include <optional>
 #include <string>
 
-Client::Client(ClientSocket socket) : socket(socket) {
-    static ClientId current = 0;
-    this->id = current++;
-}
+Client::Client(ClientSocket socket) : socket(socket) { }
 
 FileDescriptor Client::getFd() { return this->socket.fd; }
+
+void Client::subscribeTo(ChannelId id) noexcept {
+    subscriptions.insert(id);
+}
+
+void Client::unsubscribeFrom(ChannelId id) noexcept {
+    subscriptions.erase(id);
+}
 
 /**
    Forcibly close the connection, ignore errors
@@ -27,8 +33,9 @@ void Client::killConnection() noexcept {
 
 std::string Client::fmt() {
     return "FD: " + std::to_string(this->getFd()) +
-           " ADDRESS: " + this->socket.address()->ip + ":" +
-           std::to_string(this->socket.address()->port);
+           " ADDRESS: " + this->socket.address().ip + ":" +
+           std::to_string(this->socket.address().port);
 }
 
+Client::Client(){}
 Client::~Client() {}
