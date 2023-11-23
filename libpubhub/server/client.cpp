@@ -1,6 +1,8 @@
 #include "client.hpp"
+#include "message.hpp"
 #include <cstdio>
 #include <string>
+#include <sys/socket.h>
 
 Client::Client(ClientSocket socket) : socket(socket) {}
 
@@ -20,6 +22,20 @@ void Client::killConnection() noexcept {
     } catch (...) {
     }
 }
+
+/**
+   throws:
+   -NetworkException if socket.receive() fails
+   -json parse exception if it fails
+ **/ 
+nlohmann::json Client::receiveMessage() {
+    return nlohmann::json::parse(socket.receive());
+}
+
+void Client::sendMessage(const Payload &message) {
+    this->socket.send(message.getContent().dump());
+}
+
 
 std::string Client::fmt() {
     return "FD: " + std::to_string(this->getFd()) +

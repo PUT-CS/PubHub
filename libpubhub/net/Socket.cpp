@@ -4,7 +4,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <exception>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -21,23 +23,36 @@ void Socket::create() {
 };
 
 std::string Socket::receive() {
-    char buffer[this->buffer_size];
-    int bytes_read = 1;
-    int bytes_overall = 0;
-    while (bytes_read != 0) {
-        bytes_read = read(this->fd, buffer, sizeof(buffer));
-        if (bytes_read == -1) {
-            throw NetworkException("Read");
-        }
-        bytes_overall += bytes_read;
+    unsigned int msg_size;
+    int bytes_read = 0;
+    bytes_read = recv(this->fd, &msg_size, sizeof(msg_size), MSG_WAITALL);
+    if (bytes_read != sizeof(msg_size)) {
+	throw NetworkException("Read");
     }
-    print_n_from(buffer, bytes_overall);
-    return std::string(buffer);
+    
+    char message_buffer[msg_size];
+    int message_bytes_read = 0;
+    message_bytes_read = recv(this->fd, message_buffer, sizeof(message_buffer), MSG_WAITALL);
+    if (bytes_read == -1) {
+	throw NetworkException("Read");
+    }
+    
+    return std::string(message_buffer);
 };
 
-void Socket::send(Payload &msg) {
-    (void)msg;
-    throw NetworkException("unimplemented");
+void Socket::send(const std::string &message) {
+    unsigned int msg_size = message.size();
+    int bytes_send = 0;
+    bytes_send = ::send(this->fd, &msg_size, sizeof(msg_size), 0);
+    if (bytes_send == -1) {
+	throw NetworkException("Read");
+    }
+    
+    unsigned int message_bytes_send = 0;
+    message_bytes_send = ::send(this->fd, &message, msg_size, 0);
+    if (message_bytes_send == -1) {
+	throw NetworkException("Read");
+    }
 };
 
 auto Socket::address() noexcept -> SocketAddress * { return &this->addr; }
