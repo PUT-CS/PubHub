@@ -24,8 +24,8 @@ SocketAddress::SocketAddress(sockaddr_in addr) {
     this->port = addr.sin_port;
 }
 
-auto SocketAddress::inner() -> std::reference_wrapper<sockaddr_in> {
-    return std::reference_wrapper<sockaddr_in>(this->inner_addr);
+auto SocketAddress::inner() -> sockaddr_in& {
+    return std::ref(this->inner_addr);
 }
 
 std::string SocketAddress::fmt() {

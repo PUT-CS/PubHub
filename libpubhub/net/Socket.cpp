@@ -40,12 +40,12 @@ void Socket::send(Payload &msg) {
     throw NetworkException("unimplemented");
 };
 
-auto Socket::address() noexcept -> SocketAddress * { return &this->addr; }
+auto Socket::address() noexcept -> const SocketAddress& { return this->addr; }
 
 void Socket::kill() {
     int s = ::shutdown(this->fd, SHUT_RDWR);
     int c = ::close(this->fd);
-    if (!s) {
+    if (!s || !c) {
         throw NetworkException("Shutdown or Close");
     }
 }

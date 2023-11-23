@@ -26,7 +26,7 @@ ServerSocket::ServerSocket(SocketAddress addr) {
 }
 
 void ServerSocket::bind() {
-    int res = ::bind(this->fd, (sockaddr *)&(*this->addr.inner()),
+    int res = ::bind(this->fd, (sockaddr*)&this->addr.inner(),
                      sizeof(this->addr.inner()));
     if (res == -1) {
         throw NetworkException("Bind");
