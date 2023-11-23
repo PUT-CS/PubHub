@@ -1,17 +1,26 @@
 #include "hub.hpp"
 #include "../net/ServerSocket.hpp"
 #include "../net/exceptions.hpp"
+#include "channel.hpp"
 #include "client.hpp"
 #include "event.hpp"
 #include "exceptions.hpp"
+#include "types.hpp"
 #include <algorithm>
 #include <bits/types/time_t.h>
 #include <cstdio>
 #include <cstdlib>
 #include <exception>
+#include <functional>
 #include <iostream>
+#include <iterator>
+#include <optional>
+#include <set>
+#include <stdexcept>
 #include <string>
 #include <sys/poll.h>
+#include <utility>
+#include <vector>
 
 /// Create the Hub. Initializes the server socket and the first pollfd.
 Hub::Hub(SocketAddress addr) {
@@ -19,15 +28,16 @@ Hub::Hub(SocketAddress addr) {
     this->socket->bind();
     this->socket->listen();
 
-    pollfd server_pollfd = {this->socket->fd,
-                            POLLIN | POLLHUP | POLLERR | POLLNVAL, 0};
+    pollfd server_pollfd = {this->socket->fd, Hub::POLL_INPUT | Hub::POLL_ERROR,
+                            0};
     this->poll_fds.push_back(server_pollfd);
 }
 
 /**
    Wait for the next event on either the server or one of the clients.
 
-   Throws NetworkException if `poll` fails.
+   Throws:
+   - NetworkException if `poll` fails.
  **/
 Event Hub::nextEvent(time_t timeout) {
     int n_of_events =
@@ -60,7 +70,7 @@ Event Hub::nextEvent(time_t timeout) {
             return Event{EventKind::Input, pfd->fd};
         }
     }
-    return Event{EventKind::Nil};
+    return Event{EventKind::Nil, -1};
 }
 
 Client Hub::accept() {
@@ -70,40 +80,79 @@ Client Hub::accept() {
 
 void Hub::addClient(Client client) noexcept {
     // Add Client to the pollfd vector for polling events
-    pollfd poll_fd = {client.getFd(), POLLIN | POLLHUP | POLLERR, 0};
+    pollfd poll_fd = {client.getFd(), Hub::POLL_ERROR | Hub::POLL_INPUT, 0};
     this->poll_fds.push_back(poll_fd);
 
     // Add Client to the general Client vec
-    this->clients.push_back(std::make_pair(client, std::vector<QueuePtr>{}));
+    this->clients.insert({client.getFd(), client});
 }
 
+/**
+   Throws:
+   - ClientException if there's no Client with passed file descriptor (ID)
+ **/
 void Hub::removeClientByFd(int fd) {
     auto client = this->clientByFd(fd);
-    if (!client.has_value()) {
-        throw ClientException("No client with FD = " + std::to_string(fd));
+
+    client.killConnection();
+    std::set<Client> c;
+
+    // Remove all subscriptions of that client
+    for (auto &sub_id : client.subscriptions) {
+        this->channels[sub_id].removeSubscriber(client.getFd());
     }
 
-    client.value().get()->killConnection();
- 
     // Erase the client from the standard list of clients
-    std::erase_if(this->clients,
-                  [=](auto &pair) { return pair.first.getFd() == fd; });
+    this->clients.erase(client.getFd());
+
     // Erase the client's pollfd
-    std::erase_if(this->poll_fds, [=](pollfd &pfd) { return pfd.fd == fd; });
+    std::erase_if(this->poll_fds, [fd](pollfd &pfd) { return pfd.fd == fd; });
 }
 
-auto Hub::clientByFd(int fd) -> std::optional<std::shared_ptr<Client>> {
-    auto it = std::find_if(clients.begin(), clients.end(), [&](auto &pair) {
-        return pair.first.socket.fd == fd;
-    });
+/// Throws ClientNotFoundException if no Client with that Id.
+auto Hub::clientByFd(int fd) -> Client & {
+    auto found = this->clients.find(fd);
 
-    if (it == this->clients.end()) {
-        return std::nullopt;
+    if (found == this->clients.end()) {
+        throw ClientException("No Client with ID = " + std::to_string(fd));
     }
 
-    int idx = std::distance(clients.begin(), it);
-    auto ptr = std::make_shared<Client>(clients[idx].first);
-    return std::make_optional(ptr);
+    return std::ref(found->second);
+}
+
+/**
+   Throws:
+   - **ClientException** if no Client with passed id exists
+   - **ChannelNotFoundException** if no channel with passed name exists
+ **/
+void Hub::addSubscription(ClientId client_id, ChannelName channel_name) {
+    auto client = this->clientByFd(client_id);
+    auto channel_id = this->channelIdByName(channel_name);
+
+    this->channels[channel_id].addSubscriber(client_id);
+    this->clients[client_id].subscribeTo(channel_id);
+}
+
+/**
+   Throws:
+   - **ClientException** if no Client with passed id exists
+   - **ChannelNotFoundException** if no channel with passed name exists
+ **/
+void Hub::removeSubscription(ClientId client_id, ChannelName channel_name) {
+    auto client = this->clientByFd(client_id);
+    auto channel_id = this->channelIdByName(channel_name);
+
+    this->channels[channel_id].removeSubscriber(client_id);
+    this->clients[client_id].unsubscribeFrom(channel_id);
+}
+
+ChannelId Hub::channelIdByName(ChannelName channel_name) {
+    for (auto &[id, channel] : this->channels) {
+        if (channel.name == channel_name) {
+            return id;
+        }
+    }
+    throw ChannelNotFoundException("No Channel named `" + channel_name + '`');
 }
 
 void Hub::debugLogClients() {
@@ -113,7 +162,7 @@ void Hub::debugLogClients() {
     }
     print("Current Clients:");
     for (auto &client : this->clients) {
-        print(client.first.fmt());
+        print(client.second.fmt());
     }
 }
 

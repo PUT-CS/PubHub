@@ -6,9 +6,7 @@
 #include "libpubhub/server/hub.hpp"
 #include "libpubhub/server/message.hpp"
 #include <algorithm>
-#include <csignal>
 #include <string>
-#include <thread>
 #include <vector>
 
 class MyServer {
@@ -47,11 +45,10 @@ class MyServer {
     void handleInput(FileDescriptor fd) {
         // Look for a client with an event
         // Client sent data and it's ready to read
-	auto client = hub.clientByFd(fd);
+	// TODO: Catch
+	auto& client = hub.clientByFd(fd);
 	std::string buf;
-	if (client.has_value()) {
-	    buf = client.value()->receiveMessage().dump();
-	}
+	buf = client.receiveMessage().dump();
 	
         // char buf[16] = {};
         // int n = recv(fd, buf, 16, 0);

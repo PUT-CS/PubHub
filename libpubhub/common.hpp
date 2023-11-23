@@ -6,28 +6,12 @@
 #include <ctime>
 #include <iostream>
 #include <ostream>
+#include <unordered_map>
 #include <variant>
 #include <iostream>
 #include <string>
 #include <ctime>
 #include <math.h>
-
-typedef int FileDescriptor;
-
-typedef struct {
-} None;
-
-std::ostream &operator<<(std::ostream &os, const None &_);
-
-typedef enum  {
-    Other
-} PubHubError;
-
-// template <typename T, typename U>
-// std::ostream &operator<<(std::ostream &os, const cpp::result<T, U> &res) {
-//     res.has_value() ? os << res.value() : os << res.error();
-//     return os;
-// }
 
 template <typename T> void print(T obj) { std::cout << obj << std::endl; }
 

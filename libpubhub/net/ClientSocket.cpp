@@ -18,13 +18,13 @@ ClientSocket::ClientSocket(FileDescriptor fd, SocketAddress addr) {
 
 std::string ClientSocket::fmt() noexcept {
     return "CLIENT SOCKET:\nFD: " + std::to_string(this->fd) +
-        " ADDRESS: " + this->address()->ip
+        " ADDRESS: " + this->address().ip
         + ":" +
-        std::to_string(this->address()->port);
+        std::to_string(this->address().port);
 }
 
 void ClientSocket::connect() {
-    int res = ::connect(this->fd, (sockaddr *)&(*this->addr.inner()),
+    int res = ::connect(this->fd, (sockaddr *)&this->addr.inner(),
                         sizeof(this->addr.inner()));
     if (res == -1) {
         throw NetworkException("Connect");

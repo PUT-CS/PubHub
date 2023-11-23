@@ -32,17 +32,24 @@ std::string Socket::receive() {
     uint32_t msg_size;
     int bytes_read = 0;
     bytes_read = recv(this->fd, &msg_size, sizeof(msg_size), MSG_WAITALL);
-    if (bytes_read != sizeof(msg_size)) {
+
+    if (bytes_read != sizeof(msg_size) && bytes_read != 0) {
 	throw NetworkException("Read");
+	
     }
     
     char message_buffer[msg_size];
     int message_bytes_read = 0;
     message_bytes_read = recv(this->fd, message_buffer, msg_size, MSG_WAITALL);
-    if (bytes_read == -1) {
+
+    if (message_bytes_read != (long) msg_size && message_bytes_read != 0) {
 	throw NetworkException("Read");
     }
     
+    if (bytes_read == 0 || message_bytes_read == 0) {
+	// TODO: Add adequate exception
+	throw "Client closed connection";
+    }
     return std::string(message_buffer);
 };
 
@@ -59,19 +66,19 @@ void Socket::send(const std::string &message) {
 	throw NetworkException("Send");
     }
     
-    unsigned int message_bytes_send = 0;
+    int message_bytes_send = 0;
     message_bytes_send = ::send(this->fd, &message, msg_size, 0);
     if (message_bytes_send == -1) {
 	throw NetworkException("Send");
     }
 };
 
-auto Socket::address() noexcept -> SocketAddress * { return &this->addr; }
+auto Socket::address() noexcept -> const SocketAddress& { return this->addr; }
 
 void Socket::kill() {
     int s = ::shutdown(this->fd, SHUT_RDWR);
     int c = ::close(this->fd);
-    if (!s) {
+    if (!s || !c) {
         throw NetworkException("Shutdown or Close");
     }
 }

@@ -3,6 +3,7 @@
 
 #include "SocketAddress.hpp"
 #include "../common.hpp"
+#include "../server/types.hpp"
 #include "../server/message.hpp"
 
 class Socket {
@@ -16,8 +17,8 @@ class Socket {
     
     void create();
     std::string receive();
-    void  send(const std::string &msg);
-    auto address() noexcept -> SocketAddress*;
+    void send(const std::string &msg);
+    auto address() noexcept -> const SocketAddress&;
     void kill();
     void shutdown();
     void close();
