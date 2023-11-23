@@ -25,10 +25,10 @@ fn main() {
             let json_string = serde_json::to_string(&json_data).expect("Failed to serialize JSON");
 
 	    //Get JSON string length
-            let integer_bytes = json_string.len().to_be_bytes();
-	    
+            let integer_bytes: u32 = json_string.len().try_into().expect("Should be convertable to u32");
+	    let integer_bytes = socket::htonl(integer_bytes);
             // Combine integer and JSON data into a single byte vector
-            let mut combined_data = integer_bytes.to_vec();
+            let mut combined_data = integer_bytes.to_be_bytes().to_vec();
             combined_data.extend_from_slice(json_string.as_bytes());
 
             // Send data to the server

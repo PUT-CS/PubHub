@@ -27,7 +27,7 @@ void Client::killConnection() noexcept {
    throws:
    -NetworkException if socket.receive() fails
    -json parse exception if it fails
- **/ 
+ **/
 nlohmann::json Client::receiveMessage() {
     return nlohmann::json::parse(socket.receive());
 }

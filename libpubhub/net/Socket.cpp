@@ -1,11 +1,13 @@
 #include "Socket.hpp"
 #include "SocketAddress.hpp"
 #include <cerrno>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <exception>
 #include <iostream>
+#include <netinet/in.h>
 #include <stdexcept>
 #include <string>
 #include <sys/socket.h>
@@ -22,8 +24,12 @@ void Socket::create() {
     this->created = true;
 };
 
+/**
+   throws:
+   - Networkexception if recv() fails
+ **/
 std::string Socket::receive() {
-    unsigned int msg_size;
+    uint32_t msg_size;
     int bytes_read = 0;
     bytes_read = recv(this->fd, &msg_size, sizeof(msg_size), MSG_WAITALL);
     if (bytes_read != sizeof(msg_size)) {
@@ -32,7 +38,7 @@ std::string Socket::receive() {
     
     char message_buffer[msg_size];
     int message_bytes_read = 0;
-    message_bytes_read = recv(this->fd, message_buffer, sizeof(message_buffer), MSG_WAITALL);
+    message_bytes_read = recv(this->fd, message_buffer, msg_size, MSG_WAITALL);
     if (bytes_read == -1) {
 	throw NetworkException("Read");
     }
@@ -40,18 +46,23 @@ std::string Socket::receive() {
     return std::string(message_buffer);
 };
 
+/**
+   throws:
+   - Networkexception if send() fails
+ **/
 void Socket::send(const std::string &message) {
-    unsigned int msg_size = message.size();
+    uint32_t msg_size = message.size();
+    msg_size = htonl(msg_size);
     int bytes_send = 0;
     bytes_send = ::send(this->fd, &msg_size, sizeof(msg_size), 0);
     if (bytes_send == -1) {
-	throw NetworkException("Read");
+	throw NetworkException("Send");
     }
     
     unsigned int message_bytes_send = 0;
     message_bytes_send = ::send(this->fd, &message, msg_size, 0);
     if (message_bytes_send == -1) {
-	throw NetworkException("Read");
+	throw NetworkException("Send");
     }
 };
 
