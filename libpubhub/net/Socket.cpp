@@ -7,6 +7,7 @@
 #include <cstring>
 #include <exception>
 #include <iostream>
+#include <memory>
 #include <netinet/in.h>
 #include <stdexcept>
 #include <string>
@@ -35,12 +36,14 @@ std::string Socket::receive() {
 
     if (bytes_read != sizeof(msg_size) && bytes_read != 0) {
 	throw NetworkException("Read");
-	
     }
     
-    char message_buffer[msg_size];
+    char* message_buffer = new char[msg_size+1];
     int message_bytes_read = 0;
+    
     message_bytes_read = recv(this->fd, message_buffer, msg_size, MSG_WAITALL);
+    
+    message_buffer[msg_size] = '\0'; // ?
 
     if (message_bytes_read != (long) msg_size && message_bytes_read != 0) {
 	throw NetworkException("Read");
@@ -50,7 +53,11 @@ std::string Socket::receive() {
 	// TODO: Add adequate exception
 	throw "Client closed connection";
     }
-    return std::string(message_buffer);
+    
+    auto str = std::string(message_buffer);
+    
+    delete[] message_buffer;
+    return str;
 };
 
 /**

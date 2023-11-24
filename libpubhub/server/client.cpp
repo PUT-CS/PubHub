@@ -39,13 +39,13 @@ void Client::killConnection() noexcept {
    -json parse exception if it fails
  **/
 nlohmann::json Client::receiveMessage() {
-    return nlohmann::json::parse(socket.receive());
+    auto s = socket.receive();
+    return nlohmann::json::parse(s);
 }
 
 void Client::sendMessage(const Payload &message) {
     this->socket.send(message.getContent().dump());
 }
-
 
 std::string Client::fmt() {
     return "FD: " + std::to_string(this->getFd()) +
