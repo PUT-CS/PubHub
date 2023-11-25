@@ -34,7 +34,7 @@ std::string Socket::receive() {
     int bytes_read = 0;
     bytes_read = recv(this->fd, &msg_size, sizeof(msg_size), MSG_WAITALL);
 
-    // using `ntohl` here breaks the code.
+    msg_size = ntohl(msg_size);
         
     if (bytes_read != sizeof(msg_size) && bytes_read != 0) {
 	throw NetworkException("Read");
