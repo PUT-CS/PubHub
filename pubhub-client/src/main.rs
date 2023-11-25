@@ -1,36 +1,43 @@
-use std::io::{stdin, Read, Write};
-use std::net::TcpStream;
+use colored::Colorize;
+use connection::{PubHubConnection, Request};
+use log::{trace, debug, info, warn, error};
+mod connection;
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-struct MyMessage {
-    message: String,
+type Result<T> = std::result::Result<T, anyhow::Error>;
+
+fn info(msg: &str) {
+    eprintln!("{}", format!("[INFO] {}", msg).green())
+}
+fn warn(msg: &str) {
+    eprintln!("{}", format!("[WARN] {}", msg).yellow())
+}
+fn error(msg: &str) {
+    eprintln!("{}", format!("[ERROR] {}", msg).red())
 }
 
-fn main() {
-    let server_address = "127.0.0.1";
-    let server_port = 8080;
+fn main() -> Result<()> {
+    let address = "127.0.0.1";
+    let port = 8080;
 
-    let mut stream = TcpStream::connect((server_address, server_port))
+    let mut conn = PubHubConnection::new((address, port))
         .expect("Failed to connect to the server. Is it running?");
 
-    loop {
-        let input = stdin().lines().next().unwrap().expect("Read line");
+    let reqs = vec![
+        Request::CreateChannel("datetime".into()),
+        Request::Subscribe("nproc".into()),
+        Request::Publish {
+            channel: "nproc".into(),
+            content: "hello!".into(),
+        },
+        Request::Unsubscribe("nproc".into()),
+        Request::Ask,
+    ];
 
-        let json_data = MyMessage { message: input };
-        let json_string = serde_json::to_string(&json_data).expect("Failed to serialize JSON");
-
-        let integer_bytes: u32 = json_string.len().try_into().map(socket::htonl).unwrap();
-        
-        let data = [
-            integer_bytes.to_be_bytes().as_slice(),
-            json_string.as_bytes(),
-        ]
-        .concat();
-
-        eprintln!("Sending: {json_string:?}");
-        
-        stream
-            .write_all(&data)
-            .expect("Failed to send data to the server");
+    for request in reqs {
+        conn.execute(request).unwrap();
     }
+    
+    loop {}
+
+    Ok(())
 }
