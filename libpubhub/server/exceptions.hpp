@@ -24,4 +24,13 @@ class ChannelNotFoundException : std::exception {
     const char *what() const noexcept override { return msg.c_str(); }
 };
 
+class ClientDisconnectedException: std::exception {
+  private:
+    std::string msg;
+
+  public:
+    ClientDisconnectedException(const std::string &what) { msg = what; }
+    const char *what() const noexcept override { return msg.c_str(); }
+};
+
 #endif

@@ -1,36 +1,13 @@
 use std::{
-    error::Error,
-    fmt::{write, Debug, Display},
     io::{Read, Write},
     mem::size_of,
     net::{TcpStream, ToSocketAddrs},
 };
 
 use anyhow::Result;
-use log::{info, warn};
-use serde_json::{Map, Value};
-use strum::Display;
+use serde_json::Value;
 
-#[derive(Debug)]
-pub struct ConnectionError {
-    reason: String,
-}
-
-impl Error for ConnectionError {}
-
-impl Display for ConnectionError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.reason)
-    }
-}
-
-impl ConnectionError {
-    pub fn new(reason: &str) -> Self {
-        Self {
-            reason: reason.to_string(),
-        }
-    }
-}
+pub use crate::{error::ConnectionError, request::Request, response::Response};
 
 pub struct PubHubConnection {
     stream: TcpStream,
@@ -46,11 +23,11 @@ impl PubHubConnection {
 
     pub fn execute(&mut self, request: Request) -> Result<Response> {
         let json = request.to_json().to_string();
-        
+
         self.send_request(json)?;
         //let res = self.await_response()?;
 
-        Ok(Response::Ok)
+        Ok(Response::Ok { content: "".into() })
         //Ok(res)
     }
 
@@ -64,7 +41,7 @@ impl PubHubConnection {
         let all = [size.to_be_bytes().as_slice(), msg_bytes].concat();
 
         self.stream.write_all(&all)?;
-        
+
         Ok(())
     }
 
@@ -78,7 +55,7 @@ impl PubHubConnection {
         let size = u32::from_be_bytes(size_buffer);
 
         let mut msg_buffer: Vec<u8> = Vec::with_capacity(size as usize);
-        self.stream.read_exact(&mut msg_buffer.as_mut_slice())?;
+        self.stream.read_exact(msg_buffer.as_mut_slice())?;
 
         let msg = String::from_utf8(msg_buffer)?;
         let json: Value = serde_json::from_str(&msg)?;
@@ -89,7 +66,7 @@ impl PubHubConnection {
             .ok_or_else(|| ConnectionError::new("Server sent a response of unspecified kind"))?;
 
         match kind.as_str() {
-            "Ok" => Ok(Response::Ok),
+            "Ok" => Ok(Response::Ok { content: "".into() }),
             "Error" => match json.get("why") {
                 Some(reason) => Ok(Response::Error {
                     why: reason.to_string(),
@@ -107,46 +84,5 @@ impl PubHubConnection {
 impl Drop for PubHubConnection {
     fn drop(&mut self) {
         let _ = self.stream.shutdown(std::net::Shutdown::Both);
-    }
-}
-
-#[derive(serde::Deserialize)]
-pub enum Response {
-    Ok,
-    Error { why: String },
-}
-
-
-
-#[derive(Debug, strum::IntoStaticStr, Display)]
-pub enum Request {
-    Subscribe(String),
-    Unsubscribe(String),
-    CreateChannel(String),
-    DeleteChannel(String),
-    Publish { channel: String, content: String },
-    Ask,
-}
-
-impl Request {
-    pub fn to_json(self) -> serde_json::Value {
-        let mut m = Map::new();
-
-        m.insert("kind".into(), Value::String(self.to_string()));
-
-        use Request::*;
-        let new_values: Vec<(&str, String)> = match self {
-            Subscribe(name) | Unsubscribe(name) | CreateChannel(name) | DeleteChannel(name) => {
-                vec![("target", name)]
-            }
-            Publish { channel, content } => vec![("channel", channel), ("content", content)],
-            Ask => vec![],
-        };
-
-        for (k, v) in new_values {
-            m.insert(k.to_string(), Value::String(v));
-        }
-
-        Value::Object(m)
     }
 }

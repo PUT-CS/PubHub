@@ -34,6 +34,8 @@ std::string Socket::receive() {
     int bytes_read = 0;
     bytes_read = recv(this->fd, &msg_size, sizeof(msg_size), MSG_WAITALL);
 
+    // using `ntohl` here breaks the code.
+        
     if (bytes_read != sizeof(msg_size) && bytes_read != 0) {
 	throw NetworkException("Read");
     }
@@ -51,7 +53,7 @@ std::string Socket::receive() {
     
     if (bytes_read == 0 || message_bytes_read == 0) {
 	// TODO: Add adequate exception
-	throw "Client closed connection";
+	throw NetworkException("Socket already closed", false);
     }
     
     auto str = std::string(message_buffer);

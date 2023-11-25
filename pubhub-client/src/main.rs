@@ -1,19 +1,16 @@
-use colored::Colorize;
+use std::time::Duration;
 use connection::{PubHubConnection, Request};
-use log::{trace, debug, info, warn, error};
+use log::info;
+use logs::info;
+
 mod connection;
+mod logs;
+mod request;
+mod response;
+mod error;
 
 type Result<T> = std::result::Result<T, anyhow::Error>;
 
-fn info(msg: &str) {
-    eprintln!("{}", format!("[INFO] {}", msg).green())
-}
-fn warn(msg: &str) {
-    eprintln!("{}", format!("[WARN] {}", msg).yellow())
-}
-fn error(msg: &str) {
-    eprintln!("{}", format!("[ERROR] {}", msg).red())
-}
 
 fn main() -> Result<()> {
     let address = "127.0.0.1";
@@ -21,8 +18,8 @@ fn main() -> Result<()> {
 
     let mut conn = PubHubConnection::new((address, port))
         .expect("Failed to connect to the server. Is it running?");
-
-    let reqs = vec![
+    
+    let requests = vec![
         Request::CreateChannel("datetime".into()),
         Request::Subscribe("nproc".into()),
         Request::Publish {
@@ -33,11 +30,12 @@ fn main() -> Result<()> {
         Request::Ask,
     ];
 
-    for request in reqs {
-        conn.execute(request).unwrap();
+    for request in requests {
+        let res = conn.execute(request)?;
+        info(format!("Response: {res:?}").as_str());
     }
     
-    loop {}
-
-    Ok(())
+    loop {
+        std::thread::sleep(Duration::from_millis(100));
+    }
 }

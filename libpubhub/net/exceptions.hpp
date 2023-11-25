@@ -14,6 +14,9 @@ class NetworkException : public std::exception {
     NetworkException(const std::string &what) {
         this->msg = what + ": " + std::string(strerror(errno));
     }
+    NetworkException(const std::string &what, bool perror) {
+        this->msg = what;
+    }
 
     const char *what() const noexcept override { return msg.c_str(); }
 };
