@@ -47,15 +47,31 @@ class MyServer {
         // Client sent data and it's ready to read
 	// TODO: Catch
 	auto& client = hub.clientByFd(fd);
-	std::string buf;
-	buf = client.receiveMessage().dump();
+	nlohmann::json buf;
+	buf = client.receiveMessage();
+
+	switch (hub.getPayloadKind_map()[buf["kind"]]) {
+	case PayloadKind::Subscribe:
+	    std::cout << hub.getPayloadKind_map()["Subscribe"] << std::endl;
+	    break;
+	case PayloadKind::Unsubscribe:
+	    std::cout << hub.getPayloadKind_map()["Unsubscribe"] << std::endl;
+	    break;
+	case PayloadKind::CreateChannel:
+	    std::cout << hub.getPayloadKind_map()["CreateChannel"] << std::endl;
+	    break;
+	case PayloadKind::DeleteChannel:
+	    std::cout << hub.getPayloadKind_map()["DeleteChannel"] << std::endl;
+	    break;
+	case PayloadKind::Publish:
+	    std::cout << hub.getPayloadKind_map()["Publish"] << std::endl;
+	    break;
+	default:
+	    std::cout << hub.getPayloadKind_map()["Error"] << std::endl;
+	    break;
+	}
 	
-        // char buf[16] = {};
-        // int n = recv(fd, buf, 16, 0);
-        // if (n == -1) {
-        //     throw NetworkException("Recv");
-        // }
-        auto msg = buf;
+        auto msg = buf.dump();
         if (msg.ends_with('\n')) {
             msg.pop_back();
         }

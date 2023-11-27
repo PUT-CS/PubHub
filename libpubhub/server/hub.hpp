@@ -26,7 +26,7 @@ class Hub {
        Every time a client connects or disconnects this has to be updated
      **/
     std::vector<pollfd> poll_fds;
-
+    std::map<std::string, PayloadKind> PayloadKind_map;
   public:
     static const auto POLL_ERROR = POLLERR | POLLNVAL | POLLHUP | POLLRDHUP;
     static const auto POLL_INPUT = POLLIN;
@@ -48,8 +48,10 @@ class Hub {
     void removeClientByFd(FileDescriptor);
     auto clientByFd(FileDescriptor) -> Client&;
 
+    std::map<std::string, PayloadKind> getPayloadKind_map();
+    void setPayloadKind_map();
+    
     auto channelIdByName(ChannelName) -> ChannelId;
-
     void addSubscription(ClientId, ChannelName);
     void removeSubscription(ClientId, ChannelName);
 
