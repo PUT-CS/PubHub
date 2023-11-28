@@ -21,12 +21,13 @@ fn main() -> Result<()> {
     
     let requests = vec![
         Request::CreateChannel("datetime".into()),
-        Request::Subscribe("nproc".into()),
+        Request::Subscribe("datetime".into()),
         Request::Publish {
-            channel: "nproc".into(),
+            channel: "datetime".into(),
             content: "hello!".into(),
         },
-        Request::Unsubscribe("nproc".into()),
+        Request::Unsubscribe("datetime".into()),
+	Request::DeleteChannel("datetime".into()),
         Request::Ask,
     ];
 

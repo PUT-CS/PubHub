@@ -13,12 +13,12 @@
 #include <type_traits>
 
 enum PayloadKind {
+    Error,
     Subscribe,
     Unsubscribe,
     CreateChannel,
     DeleteChannel,
-    Publish,
-    Error
+    Publish
 };
 
 enum HubError {

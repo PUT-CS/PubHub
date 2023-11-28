@@ -52,22 +52,29 @@ class MyServer {
 
 	switch (hub.getPayloadKind_map()[buf["kind"]]) {
 	case PayloadKind::Subscribe:
-	    std::cout << hub.getPayloadKind_map()["Subscribe"] << std::endl;
+	    logInfo(buf["kind"]);
+	    hub.addSubscription(client.getFd(), buf["target"]);
 	    break;
 	case PayloadKind::Unsubscribe:
-	    std::cout << hub.getPayloadKind_map()["Unsubscribe"] << std::endl;
+	    logInfo(buf["kind"]);
+	    hub.removeSubscription(client.getFd(), buf["target"]);
 	    break;
 	case PayloadKind::CreateChannel:
-	    std::cout << hub.getPayloadKind_map()["CreateChannel"] << std::endl;
+	    logInfo(buf["kind"]);
+	    hub.addChannel(buf["target"]);
 	    break;
 	case PayloadKind::DeleteChannel:
-	    std::cout << hub.getPayloadKind_map()["DeleteChannel"] << std::endl;
+	    logInfo(buf["kind"]);
+	    hub.deleteChannel(buf["target"]);
 	    break;
 	case PayloadKind::Publish:
-	    std::cout << hub.getPayloadKind_map()["Publish"] << std::endl;
+	    logInfo(buf["kind"]);
 	    break;
 	default:
-	    std::cout << hub.getPayloadKind_map()["Error"] << std::endl;
+	    logInfo(buf["kind"]);
+	    for (auto i : hub.channels) {
+		std::cout<< i.first << " " + i.second.name << std::endl;
+	    }
 	    break;
 	}
 	
@@ -90,6 +97,8 @@ class MyServer {
         logInfo("Added Client: " + client.fmt());
     }
 };
+
+ChannelId Channel::channel_id_gen = 0;
 
 int main() {
     const auto addr = SocketAddress("127.0.0.1", 8080);

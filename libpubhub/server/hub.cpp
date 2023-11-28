@@ -30,7 +30,6 @@ Hub::Hub(SocketAddress addr) {
     this->socket->listen();
 
     setPayloadKind_map();
-    
     pollfd server_pollfd = {this->socket->fd, Hub::POLL_INPUT | Hub::POLL_ERROR,
                             0};
     this->poll_fds.push_back(server_pollfd);
@@ -168,6 +167,36 @@ ChannelId Hub::channelIdByName(ChannelName channel_name) {
         }
     }
     throw ChannelNotFoundException("No Channel named `" + channel_name + '`');
+}
+
+void Hub::addChannel(ChannelName channel_name) {
+    auto channel = Channel();
+    channel.setName(channel_name);
+    this->channels.insert({channel.id, channel});
+}
+
+/**
+   Throws:
+   - It should?
+ **/
+void Hub::deleteChannel(ChannelName channel_name) {
+    auto id = this->channelIdByName(channel_name);
+    auto channel = channelById(id);
+    for (auto &sub_id : channel.subscribers) {
+	this->clients[sub_id].unsubscribeFrom(id);
+    }
+    this->channels.erase(id);
+}
+
+// Throws and should probably be changed to a different kind of throw
+auto Hub::channelById(ChannelId id) -> Channel & {
+    auto found = this->channels.find(id);
+
+    if (found == this->channels.end()) {
+        throw ClientException("No Channel with ID = " + std::to_string(id));
+    }
+
+    return std::ref(found->second);
 }
 
 void Hub::debugLogClients() {
