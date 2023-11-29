@@ -16,8 +16,16 @@ OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
 
 # Executable name
 EXECUTABLE = $(BIN_DIR)/pubhub
+LIB_DIR = $(SRC_DIR)/libpubhub
+NLOHMANN_JSON_GCH = $(LIB_DIR)/json.hpp.gch
 
-all: $(EXECUTABLE)
+
+all: $(NLOHAMNN_JSON_GCH) $(EXECUTABLE)
+
+$(NLOHMANN_JSON_GCH):
+	echo "COMPILING JSON"
+	$(CC) $(CCFLAGS) $(SRC_DIR)/libpubhub/json.hpp
+	echo "DONE COMPILING JSON"
 
 # Rule to compile source files into object files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
@@ -29,7 +37,7 @@ $(EXECUTABLE): $(OBJECTS)
 	mkdir $(BIN_DIR) 2> /dev/null || true
 	$(CC) $(CCFLAGS) $^ -o $@
 
-run: $(EXECUTABLE)
+run: $(NLOHMANN_JSON_GCH) $(EXECUTABLE)
 	./$(EXECUTABLE)
 
 clean:
