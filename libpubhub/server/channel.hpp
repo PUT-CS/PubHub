@@ -3,13 +3,6 @@
 #define QUEUE_H
 
 #include "client.hpp"
-#include "message.hpp"
-#include "types.hpp"
-#include <optional>
-#include <set>
-#include <unordered_map>
-#include <vector>
-
 
 class Channel {
     public:

@@ -25,4 +25,28 @@ class Socket {
     ~Socket(){};
 };
 
+
+class ClientSocket : public Socket {
+  public:
+    ClientSocket();
+    ClientSocket(SocketAddress);
+    ClientSocket(FileDescriptor, SocketAddress);
+    void connect();
+
+    std::string fmt() noexcept;
+    
+    ~ClientSocket(){};
+};
+
+
+class ServerSocket : public Socket {
+  public:
+    ServerSocket(SocketAddress);
+    void bind();
+    void listen();
+    ClientSocket accept();
+    ~ServerSocket(){};
+};
+
+
 #endif

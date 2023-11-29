@@ -1,6 +1,4 @@
 #include "channel.hpp"
-#include "types.hpp"
-#include <optional>
 
 void Channel::addSubscriber(ClientId id) noexcept { subscribers.insert(id); }
 

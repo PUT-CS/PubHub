@@ -2,17 +2,7 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
-#include "../common.hpp"
-#include <bits/types/time_t.h>
-#include <cstddef>
-#include <ctime>
-#include <iomanip>
-#include <sstream>
-#include <string>
 #include "../json.hpp"
-#include <bitset>
-#include <string_view>
-#include <type_traits>
 
 enum PayloadKind {
     Subscribe,

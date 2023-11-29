@@ -2,7 +2,6 @@
 #ifndef NET_EXCEPTIONS_H
 #define NET_EXCEPTIONS_H
 
-#include <cerrno>
 #include <cstring>
 #include <exception>
 #include <string>

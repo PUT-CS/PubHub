@@ -1,10 +1,5 @@
 #include "SocketAddress.hpp"
-#include <arpa/inet.h>
-#include <cstring>
 #include <functional>
-#include <netinet/in.h>
-#include <string>
-#include <sys/socket.h>
 
 SocketAddress::SocketAddress(std::string ip, short unsigned port) {
     this->ip = ip;
