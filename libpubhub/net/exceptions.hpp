@@ -1,3 +1,4 @@
+#pragma once
 #ifndef NET_EXCEPTIONS_H
 #define NET_EXCEPTIONS_H
 
@@ -16,6 +17,7 @@ class NetworkException : public std::exception {
     }
     NetworkException(const std::string &what, bool perror) {
         this->msg = what;
+        (void)perror;
     }
 
     const char *what() const noexcept override { return msg.c_str(); }

@@ -1,10 +1,9 @@
+#pragma once
 #ifndef SOCKET_H
 #define SOCKET_H
 
 #include "SocketAddress.hpp"
-#include "../common.hpp"
 #include "../server/types.hpp"
-#include "../server/message.hpp"
 
 class Socket {
   protected:
