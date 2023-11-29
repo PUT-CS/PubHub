@@ -1,4 +1,4 @@
-use crate::request::Request;
+use crate::pubhub::request::Request;
 
 pub fn listen_requests(channels: &Vec<&String>) -> Vec<Request> {
     channels
@@ -31,6 +31,9 @@ pub fn delete_requests(names: &Vec<&String>) -> Vec<Request> {
         .collect()
 }
 
-pub fn ask_request() -> Request {
-    Request::Ask
+pub fn requests_from_targets(
+    channels: &Vec<String>,
+    f: impl Fn(&String) -> Request,
+) -> Vec<Request> {
+    channels.iter().map(f).collect()
 }
