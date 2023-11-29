@@ -160,6 +160,11 @@ void Hub::removeSubscription(ClientId client_id, ChannelName channel_name) {
     this->clients[client_id].unsubscribeFrom(channel_id);
 }
 
+
+/**
+   Throws:
+   - **ChannelNotFoundException** if no channel with passed name exists
+ **/
 ChannelId Hub::channelIdByName(ChannelName channel_name) {
     for (auto &[id, channel] : this->channels) {
         if (channel.name == channel_name) {
@@ -169,9 +174,22 @@ ChannelId Hub::channelIdByName(ChannelName channel_name) {
     throw ChannelNotFoundException("No Channel named `" + channel_name + '`');
 }
 
+
+/**
+   Throws:
+   - **ChannelAlreadyCreated** if channel with passed name already exists
+ **/
 void Hub::addChannel(ChannelName channel_name) {
     auto channel = Channel();
     channel.setName(channel_name);
+
+    // auto found = this->channels.find(channelIdByName(channel_name));
+
+    // if (found == this->clients.end()) {
+    //     throw ChannelAlreadyExists("No Client with ID = " + std::to_string(id));
+    // }
+
+    
     this->channels.insert({channel.id, channel});
 }
 
