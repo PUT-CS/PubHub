@@ -1,6 +1,6 @@
-use super::error::ConnectionError;
+use crate::error::ConnectionError;
 
-#[derive(serde::Deserialize, Debug)]
+#[derive(Debug, Clone)]
 pub enum Response {
     Ok { content: String },
     Err { why: String },
@@ -10,7 +10,7 @@ impl TryFrom<serde_json::Value> for Response {
     type Error = anyhow::Error;
     fn try_from(value: serde_json::Value) -> Result<Self, Self::Error> {
         let kind = value
-            .get("responseKind")
+            .get("kind")
             .map(|s| s.to_string())
             .ok_or_else(|| ConnectionError::new("Server sent a response of unspecified kind"))?;
 

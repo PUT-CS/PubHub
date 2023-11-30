@@ -3,7 +3,6 @@ use strum::Display;
 
 #[derive(Debug, strum::IntoStaticStr, Display, Clone)]
 pub enum Request {
-    Error,
     Subscribe(String),
     Unsubscribe(String),
     CreateChannel(String),
@@ -18,14 +17,16 @@ impl Request {
 
         m.insert("kind".into(), Value::String(self.to_string()));
 
-        use Request::*;
+        use Request as R;
         let new_values: Vec<(&str, String)> = match self {
-            Subscribe(name) | Unsubscribe(name) | CreateChannel(name) | DeleteChannel(name) => {
+            R::Subscribe(name)
+            | R::Unsubscribe(name)
+            | R::CreateChannel(name)
+            | R::DeleteChannel(name) => {
                 vec![("target", name)]
             }
-            Publish { channel, content } => vec![("channel", channel), ("content", content)],
-            Ask => vec![],
-	    Error => vec![],
+            R::Publish { channel, content } => vec![("channel", channel), ("content", content)],
+            R::Ask => vec![],
         };
 
         for (k, v) in new_values {

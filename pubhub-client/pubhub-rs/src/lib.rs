@@ -1,20 +1,24 @@
-use std::{
-    io::{Read, Write},
-    mem::size_of,
-    net::{TcpStream, ToSocketAddrs},
-};
+use std::{net::{TcpStream, ToSocketAddrs}, io::{Write, Read}, mem::size_of};
 
-use anyhow::Result;
+use request::Request;
+use response::Response;
 use serde_json::Value;
 
-use super::{request::Request, response::Response};
+pub mod request;
+pub mod response;
+pub mod error;
+
+// #[cfg(test)]
+// mod test;
+
+type Result<T> = std::result::Result<T, anyhow::Error>;
 
 pub struct PubHubConnection {
     stream: TcpStream,
 }
 
 impl PubHubConnection {
-    pub fn new(addr: impl ToSocketAddrs) -> Result<Self, std::io::Error> {
+    pub fn new(addr: impl ToSocketAddrs) -> std::result::Result<Self, std::io::Error> {
         match TcpStream::connect(addr) {
             Ok(stream) => Ok(Self { stream }),
             Err(e) => Err(e),
