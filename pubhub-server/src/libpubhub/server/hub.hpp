@@ -40,10 +40,14 @@ class Hub {
     std::map<std::string, PayloadKind> getPayloadKind_map();
     void setPayloadKind_map();
     
-    auto channelIdByName(ChannelName) -> ChannelId;
     void addSubscription(ClientId, ChannelName);
     void removeSubscription(ClientId, ChannelName);
 
+    auto channelIdByName(ChannelName) -> ChannelId;
+    auto channelById(ChannelId) -> Channel &;
+    void addChannel(ChannelName);
+    void deleteChannel(ChannelName);
+    
     void debugLogClients();
     void debugLogPollFds();
 

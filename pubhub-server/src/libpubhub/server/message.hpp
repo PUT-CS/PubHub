@@ -5,12 +5,12 @@
 #include "../json.hpp"
 
 enum PayloadKind {
+    Error,
     Subscribe,
     Unsubscribe,
     CreateChannel,
     DeleteChannel,
-    Publish,
-    Error
+    Publish
 };
 
 enum HubError {
@@ -18,6 +18,7 @@ enum HubError {
     ChannelAlreadyExists,
     NotSubscribed,
     AlreadySubscribed,
+    InternalError,
 };
 
 class Payload {
@@ -99,7 +100,7 @@ public:
     }
 
     time_t getExpiration() {
-        return this->content["expiresAt"];
+        return this->content["expiration"];
     }
 
     // static PublishPayload fromString(std::string) {
@@ -116,9 +117,11 @@ class ErrorPayload : public Payload {
        "error" : "AlreadySubscribed"
       }
      */
-    ErrorPayload(const Payload &in_response_to, const HubError &what) {
-        (void)in_response_to;
-        (void)what;
+    ErrorPayload(std::string_view in_response_to, const HubError &what) {
+        this->content = {
+	    {"request", in_response_to},
+	    {"error", what}
+	};
         //...
     }
 

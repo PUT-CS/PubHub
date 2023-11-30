@@ -7,7 +7,7 @@ use std::{
 use anyhow::Result;
 use serde_json::Value;
 
-pub use crate::{error::ConnectionError, request::Request, response::Response};
+use super::{request::Request, response::Response};
 
 pub struct PubHubConnection {
     stream: TcpStream,

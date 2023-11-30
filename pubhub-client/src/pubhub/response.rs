@@ -1,4 +1,4 @@
-use crate::error::ConnectionError;
+use super::error::ConnectionError;
 
 #[derive(serde::Deserialize, Debug)]
 pub enum Response {

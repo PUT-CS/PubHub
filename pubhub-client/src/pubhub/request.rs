@@ -1,8 +1,9 @@
 use serde_json::{Map, Value};
 use strum::Display;
 
-#[derive(Debug, strum::IntoStaticStr, Display)]
+#[derive(Debug, strum::IntoStaticStr, Display, Clone)]
 pub enum Request {
+    Error,
     Subscribe(String),
     Unsubscribe(String),
     CreateChannel(String),
@@ -24,6 +25,7 @@ impl Request {
             }
             Publish { channel, content } => vec![("channel", channel), ("content", content)],
             Ask => vec![],
+	    Error => vec![],
         };
 
         for (k, v) in new_values {
