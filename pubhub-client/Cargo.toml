@@ -1,16 +1,10 @@
-[package]
-name = "pubhub-client"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+resolver = "1"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-anyhow = "1.0.75"
-clap = "4.4.8"
-colored = "2.0.4"
-log = "0.4.20"
-serde = { version = "1.0.193", features = ["derive"] }
-serde_json = "1.0.108"
-socket = "0.0.7"
-strum = { version = "0.25.0", features = ["derive"] }
+members = [
+    "pubhub-rs",
+    "datetime-producer",
+    "hwinfo-producer",
+    "randint-producer",
+    "conway-producer",
+]
