@@ -8,9 +8,6 @@ pub mod request;
 pub mod response;
 pub mod error;
 
-// #[cfg(test)]
-// mod test;
-
 type Result<T> = std::result::Result<T, anyhow::Error>;
 
 pub struct PubHubConnection {
@@ -43,7 +40,7 @@ impl PubHubConnection {
         // Convert to network byte order (big endian)
         let all: &[u8] = &[size.to_be_bytes().as_slice(), msg_bytes].concat();
 
-        self.stream.write_all(&all)?;
+        self.stream.write_all(all)?;
 
         Ok(())
     }
