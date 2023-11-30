@@ -9,7 +9,7 @@ OBJ_DIR = obj
 BIN_DIR = bin
 
 # Source files found in subdirectories
-SOURCES = $(shell find -L $(SRC_DIR) -type f -name '*.cpp')
+SOURCES = $(shell find  $(SRC_DIR) -type f -name '*.cpp')
 
 # Object files in a single directory
 OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
