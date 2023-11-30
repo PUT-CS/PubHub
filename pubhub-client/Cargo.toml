@@ -2,5 +2,9 @@
 resolver = "1"
 
 members = [
-    "pubhub-rs"
+    "pubhub-rs",
+    "datetime-producer",
+    "hwinfo-producer",
+    "randint-producer",
+    "conway-producer",
 ]
