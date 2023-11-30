@@ -1,10 +1,4 @@
 #include "client.hpp"
-#include "message.hpp"
-#include "types.hpp"
-#include <cstdio>
-#include <optional>
-#include <string>
-#include <sys/socket.h>
 
 Client::Client(ClientSocket socket) : socket(socket) { }
 

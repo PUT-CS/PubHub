@@ -1,27 +1,6 @@
 #include "hub.hpp"
-#include "../net/ServerSocket.hpp"
 #include "../net/exceptions.hpp"
-#include "channel.hpp"
-#include "client.hpp"
-#include "event.hpp"
 #include "exceptions.hpp"
-#include "message.hpp"
-#include "types.hpp"
-#include <algorithm>
-#include <bits/types/time_t.h>
-#include <cstdio>
-#include <cstdlib>
-#include <exception>
-#include <functional>
-#include <iostream>
-#include <iterator>
-#include <optional>
-#include <set>
-#include <stdexcept>
-#include <string>
-#include <sys/poll.h>
-#include <utility>
-#include <vector>
 
 /// Create the Hub. Initializes the server socket and the first pollfd.
 Hub::Hub(SocketAddress addr) {

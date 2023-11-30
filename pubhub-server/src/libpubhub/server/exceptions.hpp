@@ -3,9 +3,6 @@
 #define SERVER_EXCEPTIONS_H
 
 #include "client.hpp"
-#include <exception>
-#include <stdexcept>
-#include <string>
 
 class ClientException : std::exception {
   private:

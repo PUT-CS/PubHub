@@ -2,22 +2,10 @@
 #ifndef HUB_H
 #define HUB_H
 
-#include "../net/ServerSocket.hpp"
-#include "client.hpp"
 #include "event.hpp"
-#include "message.hpp"
 #include "channel.hpp"
 #include "sys/poll.h"
-#include "types.hpp"
-#include <bits/types/time_t.h>
-#include <functional>
-#include <map>
-#include <optional>
-#include <string>
-#include <sys/poll.h>
-#include <sys/types.h>
-#include <unordered_map>
-#include <vector>
+#include "../common.hpp"
 
 class Hub {
   private:

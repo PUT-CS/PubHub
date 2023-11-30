@@ -1,19 +1,5 @@
 #include "Socket.hpp"
-#include "SocketAddress.hpp"
-#include <cerrno>
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <exception>
-#include <iostream>
-#include <memory>
-#include <netinet/in.h>
-#include <stdexcept>
-#include <string>
-#include <sys/socket.h>
 #include <unistd.h>
-#include "../server/message.hpp"
 #include "exceptions.hpp"
 
 void Socket::create() {
@@ -102,5 +88,81 @@ void Socket::close() {
     int res = ::close(this->fd);
     if (res == -1) {
         throw NetworkException("Close");
+    }
+}
+
+//
+// ServerSocket methods
+//
+
+ServerSocket::ServerSocket(SocketAddress addr) {
+    this->addr = addr;
+    int enableReuseAddr = 1;
+    this->create();
+    int res = setsockopt(this->fd, SOL_SOCKET, SO_REUSEADDR, &enableReuseAddr,
+                         sizeof(int));
+    if (res == -1) {
+        perror("setsockopt");
+        this->close();
+        std::exit(1);
+    }
+}
+
+void ServerSocket::bind() {
+    int res = ::bind(this->fd, (sockaddr*)&this->addr.inner(),
+                     sizeof(this->addr.inner()));
+    if (res == -1) {
+        throw NetworkException("Bind");
+    }
+}
+
+void ServerSocket::listen() {
+    int res = ::listen(this->fd, SOMAXCONN);
+    if (res == -1) {
+        throw NetworkException("Listen");
+    }
+}
+
+ClientSocket ServerSocket::accept() {
+    sockaddr_in new_addr;
+    socklen_t addrlen = sizeof(new_addr);
+    
+    int client_fd = ::accept(this->fd, (sockaddr*)&new_addr, &addrlen);
+    if (client_fd == -1) {
+        throw NetworkException("Accept");
+    }
+
+    auto client_addr = SocketAddress(new_addr);
+    
+    return ClientSocket(client_fd, client_addr);
+}
+
+//
+// ClientSocket methods
+//
+
+ClientSocket::ClientSocket(SocketAddress addr) {
+    this->addr = addr;
+    this->create();
+}
+ClientSocket::ClientSocket(){};
+
+ClientSocket::ClientSocket(FileDescriptor fd, SocketAddress addr) {
+    this->addr = addr;
+    this->fd = fd;
+}
+
+std::string ClientSocket::fmt() noexcept {
+    return "CLIENT SOCKET:\nFD: " + std::to_string(this->fd) +
+        " ADDRESS: " + this->address().ip
+        + ":" +
+        std::to_string(this->address().port);
+}
+
+void ClientSocket::connect() {
+    int res = ::connect(this->fd, (sockaddr *)&this->addr.inner(),
+                        sizeof(this->addr.inner()));
+    if (res == -1) {
+        throw NetworkException("Connect");
     }
 }

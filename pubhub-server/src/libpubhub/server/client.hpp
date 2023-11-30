@@ -1,13 +1,9 @@
 #pragma once
 #ifndef CLIENT_H
 #define CLIENT_H
-#include "../net/ClientSocket.hpp"
+#include "../net/Socket.hpp"
 #include "message.hpp"
-#include "types.hpp"
-#include <optional>
 #include <set>
-#include <unordered_map>
-#include <vector>
 
 class Client {
   public:
