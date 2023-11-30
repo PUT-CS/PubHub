@@ -1,5 +1,7 @@
+#pragma once
 #ifndef MESSAGE_H
 #define MESSAGE_H
+
 #include "../common.hpp"
 #include <bits/types/time_t.h>
 #include <cstddef>

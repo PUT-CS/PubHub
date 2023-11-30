@@ -1,7 +1,7 @@
+#pragma once
 #ifndef SERVER_SOCKET_H
 #define SERVER_SOCKET_H
 
-#include "../common.hpp"
 #include "ClientSocket.hpp"
 #include "Socket.hpp"
 #include "SocketAddress.hpp"

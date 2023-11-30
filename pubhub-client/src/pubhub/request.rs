@@ -1,7 +1,7 @@
 use serde_json::{Map, Value};
 use strum::Display;
 
-#[derive(Debug, strum::IntoStaticStr, Display)]
+#[derive(Debug, strum::IntoStaticStr, Display, Clone)]
 pub enum Request {
     Error,
     Subscribe(String),

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef CLIENT_H
 #define CLIENT_H
 #include "../net/ClientSocket.hpp"

@@ -1,7 +1,9 @@
+#pragma once
 #ifndef EVENT_H
 #define EVENT_H
 
 #include "../common.hpp"
+#include "types.hpp"
 
 // Maybe `enum class` later?
 enum EventKind {

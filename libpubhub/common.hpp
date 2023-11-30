@@ -1,17 +1,9 @@
+#pragma once
 #ifndef COMMON
 #define COMMON
 
-#include <charconv>
-#include <cstddef>
 #include <ctime>
 #include <iostream>
-#include <ostream>
-#include <unordered_map>
-#include <variant>
-#include <iostream>
-#include <string>
-#include <ctime>
-#include <math.h>
 
 template <typename T> void print(T obj) { std::cout << obj << std::endl; }
 

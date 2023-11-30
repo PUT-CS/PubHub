@@ -1,10 +1,8 @@
+#pragma once
 #ifndef SOCKET_ADDRESS_H
 #define SOCKET_ADDRESS_H
 
 #include <arpa/inet.h>
-#include <functional>
-#include <memory>
-#include <netinet/in.h>
 #include <string>
 
 class SocketAddress {
