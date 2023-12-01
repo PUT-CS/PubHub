@@ -4,6 +4,10 @@
 #include <unistd.h>
 #include "exceptions.hpp"
 
+/**
+   Throws:
+   - **NetworkException** if socket() fails or socket already closed
+ **/
 void Socket::create() {
     auto fd = ::socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1) {
@@ -14,8 +18,8 @@ void Socket::create() {
 };
 
 /**
-   throws:
-   - Networkexception if recv() fails
+   Throws:
+   - **NetworkException** if recv() fails or socket already closed
  **/
 std::string Socket::receive() {
     uint32_t msg_size = 0;
@@ -49,8 +53,8 @@ std::string Socket::receive() {
 };
 
 /**
-   throws:
-   - Networkexception if send() fails
+   Throws:
+   - **NetworkException** if send() fails
  **/
 void Socket::send(const std::string &message) {
     uint32_t msg_size = message.size();
@@ -70,6 +74,10 @@ void Socket::send(const std::string &message) {
 
 auto Socket::address() noexcept -> const SocketAddress& { return this->addr; }
 
+/**
+   Throws:
+   - **NetworkException** if shutdown() or close() fails
+ **/
 void Socket::kill() {
     int s = ::shutdown(this->fd, SHUT_RDWR);
     int c = ::close(this->fd);
@@ -77,13 +85,21 @@ void Socket::kill() {
         throw NetworkException("Shutdown or Close");
     }
 }
-
+/**
+   Throws:
+   - **NetworkException** if shutdown() fails
+ **/
 void Socket::shutdown() {
     int res = ::shutdown(this->fd, SHUT_RDWR);
     if (res == -1) {
         throw NetworkException("Shutdown");
     }
 }
+
+/**
+   Throws:
+   - **NetworkException** if close() fails
+ **/
 void Socket::close() {
     int res = ::close(this->fd);
     if (res == -1) {
@@ -108,6 +124,10 @@ ServerSocket::ServerSocket(SocketAddress addr) {
     }
 }
 
+/**
+   Throws:
+   - **NetworkException** if bind() fails
+ **/
 void ServerSocket::bind() {
     int res = ::bind(this->fd, (sockaddr*)&this->addr.inner(),
                      sizeof(this->addr.inner()));
@@ -116,6 +136,10 @@ void ServerSocket::bind() {
     }
 }
 
+/**
+   Throws:
+   - **NetworkException** if close() fails
+ **/
 void ServerSocket::listen() {
     int res = ::listen(this->fd, SOMAXCONN);
     if (res == -1) {
@@ -123,6 +147,10 @@ void ServerSocket::listen() {
     }
 }
 
+/**
+   Throws:
+   - **NetworkException** if accept() fails
+ **/
 ClientSocket ServerSocket::accept() {
     sockaddr_in new_addr;
     socklen_t addrlen = sizeof(new_addr);
@@ -159,6 +187,10 @@ std::string ClientSocket::fmt() noexcept {
         std::to_string(this->address().port);
 }
 
+/**
+   Throws:
+   - **NetworkException** if connect() fails
+**/
 void ClientSocket::connect() {
     int res = ::connect(this->fd, (sockaddr *)&this->addr.inner(),
                         sizeof(this->addr.inner()));

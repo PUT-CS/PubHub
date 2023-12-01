@@ -23,7 +23,7 @@ impl Request {
             | R::Unsubscribe(name)
             | R::CreateChannel(name)
             | R::DeleteChannel(name) => {
-                vec![("target", name.to_string())]
+                vec![("channel", name.to_string())]
             }
             R::Publish { channel, content } => vec![("channel", channel.to_string()), ("content", content.to_string())],
             R::Ask => vec![],
@@ -46,7 +46,7 @@ mod test {
         let r = Request::Subscribe("test".into());
         let j = json!({
             "kind" : "Subscribe",
-            "target" : "test"
+            "channel" : "test"
         });
         assert_eq!(r.to_json(), j);
     }
@@ -55,7 +55,7 @@ mod test {
         let r = Request::Unsubscribe("test".into());
         let j = json!({
             "kind" : "Unsubscribe",
-            "target" : "test"
+            "channel" : "test"
         });
         assert_eq!(r.to_json(), j);
     }
@@ -65,7 +65,7 @@ mod test {
         let r = Request::CreateChannel("test".into());
         let j = json!({
             "kind" : "CreateChannel",
-            "target" : "test"
+            "channel" : "test"
         });
         assert_eq!(r.to_json(), j);
     }
@@ -75,7 +75,7 @@ mod test {
         let r = Request::DeleteChannel("test".into());
         let j = json!({
             "kind" : "DeleteChannel",
-            "target" : "test"
+            "channel" : "test"
         });
         assert_eq!(r.to_json(), j);
     }

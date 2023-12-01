@@ -2,7 +2,7 @@
 
 Client::Client(ClientSocket socket) : socket(socket) { }
 
-FileDescriptor Client::getFd() { return this->socket.fd; }
+FileDescriptor Client::getFd() const noexcept { return this->socket.fd; }
 
 void Client::subscribeTo(ChannelId id) noexcept {
     subscriptions.insert(id);

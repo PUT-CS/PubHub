@@ -4,42 +4,39 @@
 
 #include "client.hpp"
 
-class ClientException : std::exception {
+// Base class for internal errors
+class InternalErrorException : std::exception {
   private:
     std::string msg;
 
   public:
-    ClientException(const std::string &what) { this->msg = what; }
+    InternalErrorException(const std::string &what) { this->msg = what; }
     const char *what() const noexcept override { return msg.c_str(); }
 };
 
-class ChannelNotFoundException : std::exception {
+// Base class for user-related errors
+class InvalidInputException : std::exception {
   private:
     std::string msg;
 
   public:
-    ChannelNotFoundException(const std::string &what) { msg = what; }
+    InvalidInputException(const std::string &what) { this->msg = what; }
     const char *what() const noexcept override { return msg.c_str(); }
 };
 
-
-class ChannelAlreadyCreated : std::exception {
-  private:
-    std::string msg;
-
-  public:
-    ChannelAlreadyCreated(const std::string &what) { msg = what; }
-    const char *what() const noexcept override { return msg.c_str(); }
+class ChannelNotFoundException : public InvalidInputException {
+    using InvalidInputException::InvalidInputException;
+};
+class ChannelAlreadyCreatedException : InvalidInputException {
+    using InvalidInputException::InvalidInputException;
 };
 
+class ClientNotFoundException : InvalidInputException {
+    using InvalidInputException::InvalidInputException;
+};
 
-class ClientDisconnectedException: std::exception {
-  private:
-    std::string msg;
-
-  public:
-    ClientDisconnectedException(const std::string &what) { msg = what; }
-    const char *what() const noexcept override { return msg.c_str(); }
+class ClientDisconnectedException : InternalErrorException {
+    using InternalErrorException::InternalErrorException;
 };
 
 #endif
