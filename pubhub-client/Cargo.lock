@@ -9,10 +9,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a4668cab20f66d8d020e1fbc0ebe47217433c1b6c8f2040faf858554e394ace6"
 
 [[package]]
+name = "conway-producer"
+version = "0.1.0"
+
+[[package]]
+name = "datetime-producer"
+version = "0.1.0"
+
+[[package]]
 name = "heck"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
+
+[[package]]
+name = "hwinfo-producer"
+version = "0.1.0"
 
 [[package]]
 name = "itoa"
@@ -46,6 +58,10 @@ checksum = "5267fca4496028628a95160fc423a33e8b2e6af8a5302579e322e4b520293cae"
 dependencies = [
  "proc-macro2",
 ]
+
+[[package]]
+name = "randint-producer"
+version = "0.1.0"
 
 [[package]]
 name = "rustversion"
@@ -121,6 +137,14 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "test-client"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "pubhub-rs",
 ]
 
 [[package]]

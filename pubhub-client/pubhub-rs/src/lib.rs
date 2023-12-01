@@ -22,7 +22,7 @@ impl PubHubConnection {
         }
     }
 
-    pub fn execute(&mut self, request: Request) -> Result<Response> {
+    pub fn execute(&mut self, request: &Request) -> Result<Response> {
         let json = request.to_json().to_string();
 
         self.send_request(json)?;

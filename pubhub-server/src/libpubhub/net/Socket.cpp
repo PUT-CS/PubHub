@@ -1,4 +1,6 @@
 #include "Socket.hpp"
+#include <cstdlib>
+#include <memory>
 #include <unistd.h>
 #include "exceptions.hpp"
 
@@ -16,7 +18,7 @@ void Socket::create() {
    - Networkexception if recv() fails
  **/
 std::string Socket::receive() {
-    uint32_t msg_size;
+    uint32_t msg_size = 0;
     int bytes_read = 0;
     bytes_read = recv(this->fd, &msg_size, sizeof(msg_size), MSG_WAITALL);
 
@@ -26,25 +28,23 @@ std::string Socket::receive() {
 	throw NetworkException("Read");
     }
     
-    char* message_buffer = new char[msg_size+1];
+    auto message_buffer = std::make_unique<char[]>(msg_size+1);
     int message_bytes_read = 0;
     
-    message_bytes_read = recv(this->fd, message_buffer, msg_size, MSG_WAITALL);
+    message_bytes_read = recv(this->fd, message_buffer.get(), msg_size, MSG_WAITALL);
     
-    message_buffer[msg_size] = '\0'; // ?
+    message_buffer[msg_size] = '\0'; // check if this can be deleted
 
     if (message_bytes_read != (long) msg_size && message_bytes_read != 0) {
 	throw NetworkException("Read");
     }
     
     if (bytes_read == 0 || message_bytes_read == 0) {
-	// TODO: Add adequate exception
 	throw NetworkException("Socket already closed", false);
     }
     
-    auto str = std::string(message_buffer);
+    auto str = std::string(message_buffer.get());
     
-    delete[] message_buffer;
     return str;
 };
 

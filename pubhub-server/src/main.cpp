@@ -1,5 +1,6 @@
 #include "libpubhub/server/hub.hpp"
 #include "libpubhub/server/exceptions.hpp"
+#include "libpubhub/server/message.hpp"
 
 class MyServer {
   private:
@@ -44,7 +45,7 @@ class MyServer {
 
 	auto kind = msg.at("kind");
 	
-	switch (hub.getPayloadKind_map()[kind]) {
+	switch (Payload::stringMap.at(kind)) {
 	case PayloadKind::Subscribe:
 	    logInfo(kind);
 	    handleSubscribe(client, msg.at("target"));
@@ -83,44 +84,44 @@ class MyServer {
     void handleSubscribe(Client client, ChannelName target) {
 	try {
 	    hub.addSubscription(client.getFd(), target);
-	    client.sendMessage(UtilityPayload<PayloadKind::Subscribe>("OK"));
+	    //client.sendMessage(UtilityPayload<PayloadKind::Subscribe>("OK"));
 	} catch(ChannelNotFoundException &e) {
-	    client.sendMessage(ErrorPayload(target, HubError::NoSuchChannel));
+	    //client.sendMessage(ErrorPayload(target, HubError::NoSuchChannel));
 	} catch(ClientException &e) {
-	    client.sendMessage(ErrorPayload(target, HubError::InternalError));
+	    //client.sendMessage(ErrorPayload(target, HubError::InternalError));
 	}
     }
 
     void handleUnsubscribe(Client client, ChannelName target) {
 	try {
 	    hub.removeSubscription(client.getFd(), target);
-	    client.sendMessage(UtilityPayload<PayloadKind::Unsubscribe>("OK"));
+	    //client.sendMessage(UtilityPayload<PayloadKind::Unsubscribe>("OK"));
 	} catch(ChannelNotFoundException &e) {
-	    client.sendMessage(ErrorPayload(target, HubError::NoSuchChannel));
+	    //client.sendMessage(ErrorPayload(target, HubError::NoSuchChannel));
 	} catch(ClientException &e) {
-	    client.sendMessage(ErrorPayload(target, HubError::InternalError));
+	    //client.sendMessage(ErrorPayload(target, HubError::InternalError));
 	}
     }    
     
     void handleChannelCreation(Client client, ChannelName target) {
 	try {
 	    hub.addChannel(target);
-	    client.sendMessage(UtilityPayload<PayloadKind::CreateChannel>("OK"));
+	    //client.sendMessage(UtilityPayload<PayloadKind::CreateChannel>("OK"));
 	} catch(ChannelAlreadyCreated &e) {
-	    client.sendMessage(ErrorPayload(target, HubError::ChannelAlreadyExists));
+	    //client.sendMessage(ErrorPayload(target, HubError::ChannelAlreadyExists));
 	} catch(ClientException &e) {
-	    client.sendMessage(ErrorPayload(target, HubError::InternalError));
+	    //client.sendMessage(ErrorPayload(target, HubError::InternalError));
 	}
     }
 
     void handleChannelDeletion(Client client, ChannelName target) {
 	try {
 	    hub.deleteChannel(target);
-	    client.sendMessage(UtilityPayload<PayloadKind::DeleteChannel>("OK"));
+	    //client.sendMessage(UtilityPayload<PayloadKind::DeleteChannel>("OK"));
 	} catch(ChannelNotFoundException &e) {
-	    client.sendMessage(ErrorPayload(target, HubError::NoSuchChannel));
+	    //client.sendMessage(ErrorPayload(target, HubError::NoSuchChannel));
 	} catch(ClientException &e) {
-	    client.sendMessage(ErrorPayload(target, HubError::InternalError));
+	    //client.sendMessage(ErrorPayload(target, HubError::InternalError));
 	}
     }
 
