@@ -12,7 +12,7 @@ pub enum Request {
 }
 
 impl Request {
-    pub fn to_json(self) -> serde_json::Value {
+    pub fn to_json(&self) -> serde_json::Value {
         let mut m = Map::new();
 
         m.insert("kind".into(), Value::String(self.to_string()));
@@ -23,17 +23,15 @@ impl Request {
             | R::Unsubscribe(name)
             | R::CreateChannel(name)
             | R::DeleteChannel(name) => {
-                vec![("target", name)]
+                vec![("target", name.to_string())]
             }
-            R::Publish { channel, content } => vec![("channel", channel), ("content", content)],
+            R::Publish { channel, content } => vec![("channel", channel.to_string()), ("content", content.to_string())],
             R::Ask => vec![],
         };
 
         for (k, v) in new_values {
             m.insert(k.to_string(), Value::String(v));
         }
-
-
         Value::Object(m)
     }
 }
