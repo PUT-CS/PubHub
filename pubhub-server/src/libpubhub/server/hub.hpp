@@ -1,4 +1,5 @@
 #pragma once
+#include "message.hpp"
 #ifndef HUB_H
 #define HUB_H
 
@@ -15,7 +16,15 @@ class Hub {
        Every time a client connects or disconnects this has to be updated
      **/
     std::vector<pollfd> poll_fds;
-    std::map<std::string, PayloadKind> PayloadKind_map;
+
+    // const std::map<std::string, PayloadKind> PayloadKind_map = {
+    //     {"Subscribe", PayloadKind::Subscribe},
+    //     {"Unsubscribe", PayloadKind::Unsubscribe},
+    //     {"CreateChannel", PayloadKind::CreateChannel},
+    //     {"DeleteChannel", PayloadKind::DeleteChannel},
+    //     {"Publish", PayloadKind::Publish}
+    // };
+    
   public:
     static const auto POLL_ERROR = POLLERR | POLLNVAL | POLLHUP | POLLRDHUP;
     static const auto POLL_INPUT = POLLIN;
@@ -26,7 +35,6 @@ class Hub {
     
     SocketAddress addr;
     std::unique_ptr<ServerSocket> socket;
-    
 
     Hub(SocketAddress);
     Event nextEvent(time_t);
@@ -37,8 +45,7 @@ class Hub {
     void removeClientByFd(FileDescriptor);
     auto clientByFd(FileDescriptor) -> Client&;
 
-    std::map<std::string, PayloadKind> getPayloadKind_map();
-    void setPayloadKind_map();
+    //std::map<std::string, PayloadKind> getPayloadKind_map();
     
     void addSubscription(ClientId, ChannelName);
     void removeSubscription(ClientId, ChannelName);

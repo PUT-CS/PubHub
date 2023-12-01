@@ -8,7 +8,6 @@ Hub::Hub(SocketAddress addr) {
     this->socket->bind();
     this->socket->listen();
 
-    setPayloadKind_map();
     pollfd server_pollfd = {this->socket->fd, Hub::POLL_INPUT | Hub::POLL_ERROR,
                             0};
     this->poll_fds.push_back(server_pollfd);
@@ -101,17 +100,9 @@ auto Hub::clientByFd(int fd) -> Client & {
     return std::ref(found->second);
 }
 
-std::map<std::string, PayloadKind> Hub::getPayloadKind_map() {
-    return this->PayloadKind_map;
-}
-
-void Hub::setPayloadKind_map() {
-    PayloadKind_map["Subscribe"] = PayloadKind::Subscribe;
-    PayloadKind_map["Unsubscribe"] = PayloadKind::Unsubscribe;
-    PayloadKind_map["CreateChannel"] = PayloadKind::CreateChannel;
-    PayloadKind_map["DeleteChannel"] = PayloadKind::DeleteChannel;
-    PayloadKind_map["Publish"] = PayloadKind::Publish;    
-}
+// std::map<std::string, PayloadKind> Hub::getPayloadKind_map() {
+//     return this->PayloadKind_map;
+// }
 
 /**
    Throws:
