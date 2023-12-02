@@ -1,14 +1,20 @@
-#include "libpubhub/server/hub.hpp"
+#include "libpubhub/common.hpp"
 #include "libpubhub/server/exceptions.hpp"
+#include "libpubhub/server/hub.hpp"
 #include "libpubhub/server/message.hpp"
+#include "libpubhub/server/types.hpp"
+#include <algorithm>
+#include <exception>
+#include <functional>
+#include <string>
 
-class MyServer {
+class PubHubServer {
   private:
     Hub hub;
 
   public:
-    MyServer(const SocketAddress &addr) : hub(addr) {}
-    ~MyServer() {}
+    PubHubServer(const SocketAddress &addr) : hub(addr) {}
+    ~PubHubServer() {}
 
     void run() {
         logInfo("Starting the PubHub Server...");
@@ -38,93 +44,92 @@ class MyServer {
     void handleInput(FileDescriptor fd) {
         // Look for a client with an event
         // Client sent data and it's ready to read
-	// TODO: Catch
-	auto& client = hub.clientByFd(fd);
-	nlohmann::json msg;
-	msg = client.receiveMessage();
+        // TODO: Catch
+        auto &client = hub.clientByFd(fd);
+        auto msg = client.receiveMessage();
 
-	auto kind = msg.at("kind");
-	
-	switch (Payload::stringMap.at(kind)) {
-	case PayloadKind::Subscribe:
-	    logInfo(kind);
-	    handleSubscribe(client, msg.at("target"));
-	    break;
-	case PayloadKind::Unsubscribe:
-	    logInfo(kind);
-	    handleUnsubscribe(client, msg.at("target"));
-	    break;
-	case PayloadKind::CreateChannel:
-	    logInfo(kind);
-	    hub.addChannel(msg["target"]);
-	    break;
-	case PayloadKind::DeleteChannel:
-	    logInfo(msg);
-	    hub.deleteChannel(msg["target"]);
-	    break;
-	case PayloadKind::Publish:
-	    logInfo(msg);
-	    break;
-	default:
-	    logInfo(msg);
-	    for (auto i : hub.channels) {
-		std::cout<< i.first << " " + i.second.name << std::endl;
-	    }
-	    break;
-	}
-	
+        auto kind = msg.at("kind");
+
+        std::function<void()> handler{};
+        std::string target_channel;
+        try {
+            target_channel = msg.at("channel");
+        } catch(const std::exception& e){
+            logError(e.what());
+        }
+
+        switch (Payload::stringMap.at(kind)) {
+        case PayloadKind::Subscribe:
+            handler = subscribeHandler(client, target_channel);
+            break;
+        case PayloadKind::Unsubscribe:
+            handler = unsubscribeHandler(client, target_channel);
+            break;
+        case PayloadKind::CreateChannel:
+            handler = channelCreationHandler(target_channel);
+            break;
+        case PayloadKind::DeleteChannel:
+            handler = channelDeletionHandler(target_channel);
+            break;
+        case PayloadKind::Publish:
+            // check if message has content
+            handler = publishHandler(target_channel, msg.at("content"));
+            break;
+        default:
+            logWarn("Reached default branch while handling input");
+            for (auto i : hub.channels) {
+                std::cout << i.first << " " + i.second.name << std::endl;
+            }
+            break;
+        }
+
         auto msg_str = msg.dump();
         if (msg_str.ends_with('\n')) {
             msg_str.pop_back();
         }
-        
         logInfo("Received from " + std::to_string(fd) + ": " + msg_str);
+
+        try {
+            handler();
+        } catch(const InternalErrorException& e) {
+            logError("\tINTERNAL ERROR: " + std::string(e.what()));
+        } catch(const InvalidInputException& e) {
+            logError("\tINVALID INPUT: " + std::string(e.what()));
+        }
     }
 
-    void handleSubscribe(Client client, ChannelName target) {
-	try {
-	    hub.addSubscription(client.getFd(), target);
-	    //client.sendMessage(UtilityPayload<PayloadKind::Subscribe>("OK"));
-	} catch(ChannelNotFoundException &e) {
-	    //client.sendMessage(ErrorPayload(target, HubError::NoSuchChannel));
-	} catch(ClientException &e) {
-	    //client.sendMessage(ErrorPayload(target, HubError::InternalError));
-	}
+    Hub::HandlerFn subscribeHandler(const Client& client, const ChannelName& target) {
+        return [&]() {
+            logWarn("\tSubscribe handler");
+            hub.addSubscription(client.getFd(), target); };
     }
 
-    void handleUnsubscribe(Client client, ChannelName target) {
-	try {
-	    hub.removeSubscription(client.getFd(), target);
-	    //client.sendMessage(UtilityPayload<PayloadKind::Unsubscribe>("OK"));
-	} catch(ChannelNotFoundException &e) {
-	    //client.sendMessage(ErrorPayload(target, HubError::NoSuchChannel));
-	} catch(ClientException &e) {
-	    //client.sendMessage(ErrorPayload(target, HubError::InternalError));
-	}
-    }    
-    
-    void handleChannelCreation(Client client, ChannelName target) {
-	try {
-	    hub.addChannel(target);
-	    //client.sendMessage(UtilityPayload<PayloadKind::CreateChannel>("OK"));
-	} catch(ChannelAlreadyCreated &e) {
-	    //client.sendMessage(ErrorPayload(target, HubError::ChannelAlreadyExists));
-	} catch(ClientException &e) {
-	    //client.sendMessage(ErrorPayload(target, HubError::InternalError));
-	}
+    Hub::HandlerFn unsubscribeHandler(const Client& client, const ChannelName& target) {
+        return [&]() {
+            logWarn("\tUnsubscribe handler");
+            hub.removeSubscription(client.getFd(), target);
+        };
     }
 
-    void handleChannelDeletion(Client client, ChannelName target) {
-	try {
-	    hub.deleteChannel(target);
-	    //client.sendMessage(UtilityPayload<PayloadKind::DeleteChannel>("OK"));
-	} catch(ChannelNotFoundException &e) {
-	    //client.sendMessage(ErrorPayload(target, HubError::NoSuchChannel));
-	} catch(ClientException &e) {
-	    //client.sendMessage(ErrorPayload(target, HubError::InternalError));
-	}
+    Hub::HandlerFn channelCreationHandler(const ChannelName& target) {
+        return [&]() {
+            logWarn("\tAdding channel");
+            hub.addChannel(target);
+        };
     }
 
+    Hub::HandlerFn channelDeletionHandler(const ChannelName& target) {
+        return [&](){
+            logWarn("\tDeleting channel");
+            hub.deleteChannel(target);
+        };
+    }
+
+    Hub::HandlerFn publishHandler(const ChannelName& target, const std::string& message) {
+        return [&]() {
+            logWarn("\tPublish handler");
+        };
+    }
     
     void handleDisconnect(FileDescriptor fd) {
         hub.removeClientByFd(fd);
@@ -136,13 +141,14 @@ class MyServer {
         hub.addClient(client);
         logInfo("Added Client: " + client.fmt());
     }
+
 };
 
 ChannelId Channel::channel_id_gen = 0;
 
 int main() {
     const auto addr = SocketAddress("127.0.0.1", 8080);
-    auto server = MyServer(addr);
+    auto server = PubHubServer(addr);
     logInfo("Server created");
     server.run();
     logInfo("Shutdown");

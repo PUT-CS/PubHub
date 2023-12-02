@@ -1,15 +1,17 @@
 #pragma once
 #include "message.hpp"
+#include <functional>
 #ifndef HUB_H
 #define HUB_H
 
-#include "event.hpp"
-#include "channel.hpp"
-#include "sys/poll.h"
 #include "../common.hpp"
+#include "channel.hpp"
+#include "event.hpp"
+#include "sys/poll.h"
 
 class Hub {
   private:
+    
     /**
        Holds all pollfds needed to check for socket activity.
        The first pollfd in this vector shall always be the server pollfd.
@@ -24,29 +26,28 @@ class Hub {
     //     {"DeleteChannel", PayloadKind::DeleteChannel},
     //     {"Publish", PayloadKind::Publish}
     // };
-    
+
   public:
+    typedef std::function<void ()> HandlerFn;
+    
     static const auto POLL_ERROR = POLLERR | POLLNVAL | POLLHUP | POLLRDHUP;
     static const auto POLL_INPUT = POLLIN;
 
     /// ClientId is the Client's file descriptor
     std::unordered_map<FileDescriptor, Client> clients;
     std::unordered_map<ChannelId, Channel> channels;
-    
+
     SocketAddress addr;
     std::unique_ptr<ServerSocket> socket;
 
     Hub(SocketAddress);
     Event nextEvent(time_t);
-    void listen();
     Client accept();
 
     void addClient(Client) noexcept;
     void removeClientByFd(FileDescriptor);
-    auto clientByFd(FileDescriptor) -> Client&;
+    auto clientByFd(FileDescriptor) -> Client &;
 
-    //std::map<std::string, PayloadKind> getPayloadKind_map();
-    
     void addSubscription(ClientId, ChannelName);
     void removeSubscription(ClientId, ChannelName);
 
@@ -54,9 +55,9 @@ class Hub {
     auto channelById(ChannelId) -> Channel &;
     void addChannel(ChannelName);
     void deleteChannel(ChannelName);
-    
-    void debugLogClients();
-    void debugLogPollFds();
+
+    void debugLogClients() noexcept;
+    void debugLogPollFds() noexcept;
 
     ~Hub();
 };

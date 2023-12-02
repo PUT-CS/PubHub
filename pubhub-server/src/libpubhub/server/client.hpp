@@ -12,13 +12,13 @@ class Client {
 
     Client();
     Client(ClientSocket);
-    
+
     void subscribeTo(ChannelId) noexcept;
     void unsubscribeFrom(ChannelId) noexcept;
-    FileDescriptor getFd();
+    FileDescriptor getFd() const noexcept;
     void killConnection() noexcept;
     nlohmann::json receiveMessage();
-    void sendMessage(const Payload&);
+    void sendMessage(const Payload &);
     std::string fmt();
 
     ~Client();
