@@ -87,39 +87,47 @@ class PubHubServer {
         if (msg_str.ends_with('\n')) {
             msg_str.pop_back();
         }
-
         logInfo("Received from " + std::to_string(fd) + ": " + msg_str);
+
+        try {
+            handler();
+        } catch(const InternalErrorException& e) {
+            logError("\tINTERNAL ERROR: " + std::string(e.what()));
+        } catch(const InvalidInputException& e) {
+            logError("\tINVALID INPUT: " + std::string(e.what()));
+        }
     }
 
     Hub::HandlerFn subscribeHandler(const Client& client, const ChannelName& target) {
         return [&]() {
-            logInfo("subscribe handler");
+            logWarn("\tSubscribe handler");
             hub.addSubscription(client.getFd(), target); };
     }
 
     Hub::HandlerFn unsubscribeHandler(const Client& client, const ChannelName& target) {
         return [&]() {
-            logInfo("Unsubscribe handler");
+            logWarn("\tUnsubscribe handler");
             hub.removeSubscription(client.getFd(), target);
         };
     }
 
     Hub::HandlerFn channelCreationHandler(const ChannelName& target) {
         return [&]() {
-            logInfo("Adding channel");
+            logWarn("\tAdding channel");
             hub.addChannel(target);
         };
     }
 
     Hub::HandlerFn channelDeletionHandler(const ChannelName& target) {
         return [&](){
+            logWarn("\tDeleting channel");
             hub.deleteChannel(target);
         };
     }
 
     Hub::HandlerFn publishHandler(const ChannelName& target, const std::string& message) {
         return [&]() {
-            logError("Unimplemented");
+            logWarn("\tPublish handler");
         };
     }
     
