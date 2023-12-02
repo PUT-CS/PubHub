@@ -28,7 +28,7 @@ void Client::killConnection() noexcept {
 }
 
 /**
-   throws:
+   Throws:
    -NetworkException if socket.receive() fails
    -json parse exception if it fails
  **/
@@ -41,11 +41,12 @@ void Client::sendMessage(const Payload &message) {
     this->socket.send(message.getContent().dump());
 }
 
-std::string Client::fmt() {
+std::string Client::fmt() const noexcept {
     return "FD: " + std::to_string(this->getFd()) +
            " ADDRESS: " + this->socket.address().ip + ":" +
            std::to_string(this->socket.address().port);
 }
 
-Client::Client(){}
+Client::Client() {}
+
 Client::~Client() {}

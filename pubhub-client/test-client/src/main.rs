@@ -8,14 +8,19 @@ fn main() -> Result<()> {
     let mut conn = PubHubConnection::new(addr)?;
 
     let requests = &[
-        Request::CreateChannel("testchannel".into()),
+        Request::CreateChannel("testchannel1".into()),
+        Request::CreateChannel("testchannel2".into()),
+        Request::CreateChannel("testchannel3".into()),
+        Request::CreateChannel("testchannel4".into()),
+        Request::CreateChannel("testchannel4".into()),
         Request::Publish {
-            channel: "testchannel".into(),
+            channel: "testchannel1".into(),
             content: "Hello!".into(),
         },
         //Request::Ask,
-        Request::Subscribe("testchannel".into()),
-        Request::DeleteChannel("testchannel".into()),
+        Request::Subscribe("testchannel1".into()),
+        Request::Unsubscribe("testchannel1".into()),
+        Request::DeleteChannel("testchannel1".into()),
         //Request::Ask,
 
         // nonexistent channel

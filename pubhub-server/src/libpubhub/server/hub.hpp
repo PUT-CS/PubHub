@@ -1,5 +1,6 @@
 #pragma once
 #include "message.hpp"
+#include "types.hpp"
 #include <functional>
 #ifndef HUB_H
 #define HUB_H
@@ -56,8 +57,11 @@ class Hub {
     void addChannel(ChannelName);
     void deleteChannel(ChannelName);
 
-    void debugLogClients() noexcept;
-    void debugLogPollFds() noexcept;
+    bool channelExists(const ChannelName&) const noexcept;
+
+    void debugLogClients() const noexcept;
+    void debugLogPollFds() const noexcept;
+    void debugLogChannels() const noexcept;
 
     ~Hub();
 };

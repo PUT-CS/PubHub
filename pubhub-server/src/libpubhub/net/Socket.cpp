@@ -72,7 +72,7 @@ void Socket::send(const std::string &message) {
     }
 };
 
-auto Socket::address() noexcept -> const SocketAddress& { return this->addr; }
+auto Socket::address() const noexcept -> const SocketAddress& { return this->addr; }
 
 /**
    Throws:

@@ -84,30 +84,39 @@ class PubHubServer {
         }
 
         auto msg_str = msg.dump();
-        if (msg_str.ends_with('\n')) {
-            msg_str.pop_back();
-        }
         logInfo("Received from " + std::to_string(fd) + ": " + msg_str);
 
         try {
+            logInfo("Calling handler");
             handler();
+            logInfo("Exit handler");
         } catch(const InternalErrorException& e) {
             logError("\tINTERNAL ERROR: " + std::string(e.what()));
         } catch(const InvalidInputException& e) {
             logError("\tINVALID INPUT: " + std::string(e.what()));
+        } catch(const std::exception& e) {
+            logError("\tSOMETHING ELSE: " + std::string(e.what()));
+        } catch (...) {
+            logError("???");
+            std::exception_ptr p = std::current_exception();
+            std::clog << (p ? p.__cxa_exception_type()->name() : "null")
+                      << std::endl;
         }
     }
 
     Hub::HandlerFn subscribeHandler(const Client& client, const ChannelName& target) {
         return [&]() {
             logWarn("\tSubscribe handler");
-            hub.addSubscription(client.getFd(), target); };
+            hub.addSubscription(client.getFd(), target);
+            hub.debugLogChannels();
+        };
     }
 
     Hub::HandlerFn unsubscribeHandler(const Client& client, const ChannelName& target) {
         return [&]() {
             logWarn("\tUnsubscribe handler");
             hub.removeSubscription(client.getFd(), target);
+            hub.debugLogChannels();
         };
     }
 
@@ -115,6 +124,7 @@ class PubHubServer {
         return [&]() {
             logWarn("\tAdding channel");
             hub.addChannel(target);
+            hub.debugLogChannels();
         };
     }
 
@@ -122,6 +132,7 @@ class PubHubServer {
         return [&](){
             logWarn("\tDeleting channel");
             hub.deleteChannel(target);
+            hub.debugLogChannels();
         };
     }
 

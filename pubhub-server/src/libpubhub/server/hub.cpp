@@ -1,6 +1,12 @@
 #include "hub.hpp"
 #include "../net/exceptions.hpp"
+#include "channel.hpp"
 #include "exceptions.hpp"
+#include "types.hpp"
+#include <algorithm>
+#include <string>
+#include <unordered_map>
+#include <utility>
 
 /// Create the Hub. Initializes the server socket and the first pollfd.
 Hub::Hub(SocketAddress addr) {
@@ -101,7 +107,8 @@ auto Hub::clientByFd(int fd) -> Client & {
     auto found = this->clients.find(fd);
 
     if (found == this->clients.end()) {
-        throw ClientNotFoundException("No Client with ID = " + std::to_string(fd));
+        throw ClientNotFoundException("No Client with ID = " +
+                                      std::to_string(fd));
     }
 
     return std::ref(found->second);
@@ -133,7 +140,6 @@ void Hub::removeSubscription(ClientId client_id, ChannelName channel_name) {
     this->clients[client_id].unsubscribeFrom(channel_id);
 }
 
-
 /**
    Throws:
    - **ChannelNotFoundException** if no channel with passed name exists
@@ -147,21 +153,16 @@ ChannelId Hub::channelIdByName(ChannelName channel_name) {
     throw ChannelNotFoundException("No Channel named `" + channel_name + '`');
 }
 
-
 /**
    Throws:
    - **ChannelAlreadyCreated** if channel with passed name already exists
  **/
 void Hub::addChannel(ChannelName channel_name) {
-    auto channel = Channel();
-    channel.setName(channel_name);
-
-    // auto found = this->channels.find(channelIdByName(channel_name));
-
-    // if (found == this->clients.end()) {
-    //     throw ChannelAlreadyExists("No Client with ID = " + std::to_string(id));
-    // }
-    
+    if (this->channelExists(channel_name)) {
+        throw ChannelAlreadyExistsException("Channel named " + channel_name +
+                                            " already exists");
+    }
+    auto channel = Channel(channel_name);
     this->channels.insert({channel.id, channel});
 }
 
@@ -173,7 +174,7 @@ void Hub::deleteChannel(ChannelName channel_name) {
     auto id = this->channelIdByName(channel_name);
     auto channel = channelById(id);
     for (auto &sub_id : channel.subscribers) {
-	this->clients[sub_id].unsubscribeFrom(id);
+        this->clients[sub_id].unsubscribeFrom(id);
     }
     this->channels.erase(id);
 }
@@ -185,31 +186,54 @@ auto Hub::channelById(ChannelId id) -> Channel & {
     auto found = this->channels.find(id);
 
     if (found == this->channels.end()) {
-        throw ChannelNotFoundException("No Channel with ID = " + std::to_string(id));
+        throw ChannelNotFoundException("No Channel with ID = " +
+                                       std::to_string(id));
     }
 
     return std::ref(found->second);
 }
 
-void Hub::debugLogClients() noexcept {
+bool Hub::channelExists(const ChannelName &name) const noexcept {
+    auto f = [&](const std::pair<ChannelId, Channel> &p) {
+        return p.second.name == name;
+    };
+
+    auto found = std::find_if(channels.begin(), channels.end(), f);
+    return found != channels.end();
+}
+
+void Hub::debugLogClients() const noexcept {
     if (this->clients.empty()) {
         print("No Clients");
         return;
     }
     print("Current Clients:");
-    for (auto &client : this->clients) {
+    for (const auto &client : this->clients) {
         print(client.second.fmt());
     }
 }
 
-void Hub::debugLogPollFds() noexcept {
+void Hub::debugLogPollFds() const noexcept {
     if (this->poll_fds.empty()) {
         print("No pollfds");
+        return;
     }
     print("Current pollfds");
-    for (pollfd &fd : this->poll_fds) {
+    for (const pollfd &fd : this->poll_fds) {
         print("POLLFD FD: " + std::to_string(fd.fd) +
               ", EVENTS: " + std::to_string(fd.events));
+    }
+}
+
+void Hub::debugLogChannels() const noexcept {
+    if (this->channels.empty()) {
+        logDebug("No channels");
+        return;
+    }
+    print("Current Channels:");
+    for (const auto &[id, channel] : this->channels) {
+        print("ID: " + std::to_string(id) + ", Name: " + channel.name +
+              ", Subscribers: " + std::to_string(channel.subscribers.size()));
     }
 }
 

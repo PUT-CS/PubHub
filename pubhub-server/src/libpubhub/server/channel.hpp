@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #ifndef QUEUE_H
 #define QUEUE_H
 
@@ -12,10 +13,13 @@ class Channel {
     ChannelId id;
     
     Channel();
-    ~Channel();
+    Channel(std::string);
+    
     void setName(ChannelName);
     void addSubscriber(ClientId) noexcept;
     void removeSubscriber(ClientId) noexcept;
+    
+    ~Channel();
 };
 
 #endif
