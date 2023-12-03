@@ -5,7 +5,7 @@
 #include "client.hpp"
 
 // Base class for internal errors
-class InternalErrorException : std::exception {
+class InternalErrorException : public std::exception {
   private:
     std::string msg;
 
@@ -15,7 +15,7 @@ class InternalErrorException : std::exception {
 };
 
 // Base class for user-related errors
-class InvalidInputException : std::exception {
+class InvalidInputException : public std::exception {
   private:
     std::string msg;
 
@@ -27,15 +27,13 @@ class InvalidInputException : std::exception {
 class ChannelNotFoundException : public InvalidInputException {
     using InvalidInputException::InvalidInputException;
 };
-class ChannelAlreadyCreatedException : InvalidInputException {
+class ChannelAlreadyExistsException : public InvalidInputException {
     using InvalidInputException::InvalidInputException;
 };
-
-class ClientNotFoundException : InvalidInputException {
+class ClientNotFoundException : public InvalidInputException {
     using InvalidInputException::InvalidInputException;
 };
-
-class ClientDisconnectedException : InternalErrorException {
+class ClientDisconnectedException : public InternalErrorException {
     using InternalErrorException::InternalErrorException;
 };
 

@@ -19,7 +19,7 @@ class Client {
     void killConnection() noexcept;
     nlohmann::json receiveMessage();
     void sendMessage(const Payload &);
-    std::string fmt();
+    std::string fmt() const noexcept;
 
     ~Client();
 };

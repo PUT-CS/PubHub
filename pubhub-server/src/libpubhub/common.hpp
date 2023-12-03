@@ -14,7 +14,7 @@ template <typename T> void print_n_from(T arg[], size_t n) {
     std::cout << "|STOP|" << std::endl;
 }
 
-enum LogLevel { INFO, WARN, ERROR };
+enum LogLevel { DEBUG, INFO, WARN, ERROR };
 
 // Define logMessage at the beginning
 template <typename T>
@@ -23,18 +23,22 @@ void logMessage(LogLevel level, const T& message) {
     std::string colorCode;
 
     switch (level) {
-        case INFO:
-            levelStr = "INFO";
-            colorCode = "\033[32m";  // Green
-            break;
-        case WARN:
-            levelStr = "WARN";
-            colorCode = "\033[33m";  // Yellow
-            break;
-        case ERROR:
-            levelStr = "ERROR";
-            colorCode = "\033[31m";  // Red
-            break;
+    case DEBUG:
+        levelStr = "DEBUG";
+        colorCode = "";
+        break;
+    case INFO:
+        levelStr = "INFO";
+        colorCode = "\033[32m"; // Green
+        break;
+    case WARN:
+        levelStr = "WARN";
+        colorCode = "\033[33m"; // Yellow
+        break;
+    case ERROR:
+        levelStr = "ERROR";
+        colorCode = "\033[31m"; // Red
+        break;
     }
 
     // Reset color after the message
@@ -48,6 +52,11 @@ void logMessage(LogLevel level, const T& message) {
 
     // Log the message with the timestamp and colored log level
     std::cerr<< colorCode << "[" << timeStr << "]" << "[" << levelStr << "]" << ": " << message << resetColor << std::endl;
+}
+
+template <typename T>
+void logDebug(const T& message) {
+    logMessage(DEBUG, message);
 }
 
 template <typename T>
