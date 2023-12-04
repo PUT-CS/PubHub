@@ -41,7 +41,7 @@ $(EXECUTABLE): $(OBJECTS)
 	mkdir $(BIN_DIR) 2> /dev/null || true
 	$(CC) $(CC_CODE_FLAGS) $^ -o $@
 
-run: json $(EXECUTABLE)
+run: $(EXECUTABLE)
 	./$(EXECUTABLE)
 
 clean:

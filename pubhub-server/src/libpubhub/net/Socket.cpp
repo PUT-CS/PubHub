@@ -180,11 +180,11 @@ ClientSocket::ClientSocket(FileDescriptor fd, SocketAddress addr) {
     this->fd = fd;
 }
 
-std::string ClientSocket::fmt() noexcept {
+std::string ClientSocket::fmt() const noexcept {
     return "CLIENT SOCKET:\nFD: " + std::to_string(this->fd) +
-        " ADDRESS: " + this->address().ip
+        " ADDRESS: " + this->address().getIp()
         + ":" +
-        std::to_string(this->address().port);
+        std::to_string(this->address().getPort());
 }
 
 /**

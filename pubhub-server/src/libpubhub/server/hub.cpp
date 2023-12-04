@@ -1,6 +1,7 @@
 #include "hub.hpp"
 #include "../net/exceptions.hpp"
 #include "channel.hpp"
+#include "client.hpp"
 #include "exceptions.hpp"
 #include "types.hpp"
 #include <algorithm>
@@ -61,11 +62,16 @@ Event Hub::nextEvent(time_t timeout) {
 
 /**
    Throws:
-   - **NetworkException** if accept fails
+   - **NetworkException** if either accept() or connect() fail
 **/
 Client Hub::accept() {
     auto client_socket = this->socket->accept();
-    return Client(client_socket);
+    auto client = Client(client_socket);
+    
+    auto hub_port = this->socket->address().getPort();
+    client.initializeBroadcast(hub_port + 1);
+    
+    return client;
 }
 
 void Hub::addClient(Client client) noexcept {
@@ -85,8 +91,7 @@ void Hub::removeClientByFd(int fd) {
     auto client = this->clientByFd(fd);
 
     client.killConnection();
-    std::set<Client> c{};
-
+    
     // Remove all subscriptions of that client
     for (auto &sub_id : client.subscriptions) {
         this->channels[sub_id].removeSubscriber(client.getFd());

@@ -1,10 +1,10 @@
 use pubhub_rs::{request::Request, PubHubConnection};
-use std::time::Duration;
+use std::{time::Duration, net::Ipv4Addr};
 
 type Result<T> = std::result::Result<T, anyhow::Error>;
 
 fn main() -> Result<()> {
-    let addr = ("127.0.0.1", 8080);
+    let addr = (Ipv4Addr::LOCALHOST, 8080);
     let mut conn = PubHubConnection::new(addr)?;
 
     let requests = &[

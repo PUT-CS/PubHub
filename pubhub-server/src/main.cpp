@@ -4,6 +4,7 @@
 #include "libpubhub/server/message.hpp"
 #include "libpubhub/server/types.hpp"
 #include <algorithm>
+#include <cstdint>
 #include <exception>
 #include <functional>
 #include <string>
@@ -157,8 +158,11 @@ class PubHubServer {
 
 ChannelId Channel::channel_id_gen = 0;
 
+constexpr uint16_t SERVER_PORT = 8080;
+constexpr auto SERVER_ADDR = "127.0.0.1";
+
 int main() {
-    const auto addr = SocketAddress("127.0.0.1", 8080);
+    const auto addr = SocketAddress(SERVER_ADDR, SERVER_PORT);
     auto server = PubHubServer(addr);
     logInfo("Server created");
     server.run();
