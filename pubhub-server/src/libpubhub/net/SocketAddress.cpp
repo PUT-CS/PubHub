@@ -36,9 +36,7 @@ void SocketAddress::setPort(uint16_t port) {
     inner_addr.sin_port = htons(port);
 }
 
-auto SocketAddress::inner() -> sockaddr_in & {
-    return std::ref(this->inner_addr);
-}
+auto SocketAddress::inner() const -> sockaddr_in { return inner_addr; }
 
 std::string SocketAddress::fmt() {
     return this->getIp() + ":" + std::to_string(this->getPort());

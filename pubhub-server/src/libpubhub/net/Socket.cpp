@@ -1,8 +1,10 @@
 #include "Socket.hpp"
+#include "../common.hpp"
+#include "exceptions.hpp"
+#include <cstdint>
 #include <cstdlib>
 #include <memory>
 #include <unistd.h>
-#include "exceptions.hpp"
 
 /**
    Throws:
@@ -27,28 +29,29 @@ std::string Socket::receive() {
     bytes_read = recv(this->fd, &msg_size, sizeof(msg_size), MSG_WAITALL);
 
     msg_size = ntohl(msg_size);
-        
+
     if (bytes_read != sizeof(msg_size) && bytes_read != 0) {
-	throw NetworkException("Read");
+        throw NetworkException("Read");
     }
-    
-    auto message_buffer = std::make_unique<char[]>(msg_size+1);
+
+    auto message_buffer = std::make_unique<char[]>(msg_size + 1);
     int message_bytes_read = 0;
-    
-    message_bytes_read = recv(this->fd, message_buffer.get(), msg_size, MSG_WAITALL);
-    
+
+    message_bytes_read =
+        recv(this->fd, message_buffer.get(), msg_size, MSG_WAITALL);
+
     message_buffer[msg_size] = '\0'; // check if this can be deleted
 
-    if (message_bytes_read != (long) msg_size && message_bytes_read != 0) {
-	throw NetworkException("Read");
+    if (message_bytes_read != (long)msg_size && message_bytes_read != 0) {
+        throw NetworkException("Read");
     }
-    
+
     if (bytes_read == 0 || message_bytes_read == 0) {
-	throw NetworkException("Socket already closed", false);
+        throw NetworkException("Socket already closed", false);
     }
-    
+
     auto str = std::string(message_buffer.get());
-    
+
     return str;
 };
 
@@ -58,21 +61,22 @@ std::string Socket::receive() {
  **/
 void Socket::send(const std::string &message) {
     uint32_t msg_size = message.size();
-    msg_size = htonl(msg_size);
-    int bytes_send = 0;
-    bytes_send = ::send(this->fd, &msg_size, sizeof(msg_size), 0);
-    if (bytes_send == -1) {
-	throw NetworkException("Send");
-    }
     
-    int message_bytes_send = 0;
-    message_bytes_send = ::send(this->fd, &message, msg_size, 0);
+    uint32_t net_msg_size = htonl(msg_size);
+    int bytes_send = ::send(this->fd, &net_msg_size, sizeof(net_msg_size), 0);
+    if (bytes_send == -1) {
+        throw NetworkException("Send");
+    }
+
+    int message_bytes_send = ::send(this->fd, &message, msg_size, 0);
     if (message_bytes_send == -1) {
-	throw NetworkException("Send");
+        throw NetworkException("Send");
     }
 };
 
-auto Socket::address() const noexcept -> const SocketAddress& { return this->addr; }
+auto Socket::address() const noexcept -> const SocketAddress & {
+    return this->addr;
+}
 
 /**
    Throws:
@@ -129,8 +133,8 @@ ServerSocket::ServerSocket(SocketAddress addr) {
    - **NetworkException** if bind() fails
  **/
 void ServerSocket::bind() {
-    int res = ::bind(this->fd, (sockaddr*)&this->addr.inner(),
-                     sizeof(this->addr.inner()));
+    auto addr = this->address().inner();
+    int res = ::bind(this->fd, (sockaddr *)&addr, sizeof(addr));
     if (res == -1) {
         throw NetworkException("Bind");
     }
@@ -154,14 +158,14 @@ void ServerSocket::listen() {
 ClientSocket ServerSocket::accept() {
     sockaddr_in new_addr;
     socklen_t addrlen = sizeof(new_addr);
-    
-    int client_fd = ::accept(this->fd, (sockaddr*)&new_addr, &addrlen);
+
+    int client_fd = ::accept(this->fd, (sockaddr *)&new_addr, &addrlen);
     if (client_fd == -1) {
         throw NetworkException("Accept");
     }
 
     auto client_addr = SocketAddress(new_addr);
-    
+
     return ClientSocket(client_fd, client_addr);
 }
 
@@ -171,8 +175,10 @@ ClientSocket ServerSocket::accept() {
 
 ClientSocket::ClientSocket(SocketAddress addr) {
     this->addr = addr;
+    logWarn("Creating ClientSocket from Addr: " + addr.fmt());
     this->create();
 }
+
 ClientSocket::ClientSocket(){};
 
 ClientSocket::ClientSocket(FileDescriptor fd, SocketAddress addr) {
@@ -182,9 +188,8 @@ ClientSocket::ClientSocket(FileDescriptor fd, SocketAddress addr) {
 
 std::string ClientSocket::fmt() const noexcept {
     return "CLIENT SOCKET:\nFD: " + std::to_string(this->fd) +
-        " ADDRESS: " + this->address().getIp()
-        + ":" +
-        std::to_string(this->address().getPort());
+           " ADDRESS: " + this->address().getIp() + ":" +
+           std::to_string(this->address().getPort());
 }
 
 /**
@@ -192,8 +197,8 @@ std::string ClientSocket::fmt() const noexcept {
    - **NetworkException** if connect() fails
 **/
 void ClientSocket::connect() {
-    int res = ::connect(this->fd, (sockaddr *)&this->addr.inner(),
-                        sizeof(this->addr.inner()));
+    auto addr = this->address().inner();
+    int res = ::connect(this->fd, (sockaddr *)&addr, sizeof(addr));
     if (res == -1) {
         throw NetworkException("Connect");
     }

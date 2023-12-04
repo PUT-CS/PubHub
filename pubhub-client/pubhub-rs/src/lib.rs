@@ -30,8 +30,6 @@ impl PubHubConnection {
         // wait for the server to reciprocate the connection
         let (broadcast_listener, _) = TcpListener::bind(listener_addr)?.accept()?;
 
-        eprintln!("Accepted broadcast connection");
-
         Ok(Self {
             request_stream,
             broadcast_listener,

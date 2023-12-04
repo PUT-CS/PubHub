@@ -1,4 +1,5 @@
 #include "libpubhub/common.hpp"
+#include "libpubhub/json.hpp"
 #include "libpubhub/server/exceptions.hpp"
 #include "libpubhub/server/hub.hpp"
 #include "libpubhub/server/message.hpp"
@@ -96,12 +97,7 @@ class PubHubServer {
         } catch(const InvalidInputException& e) {
             logError("\tINVALID INPUT: " + std::string(e.what()));
         } catch(const std::exception& e) {
-            logError("\tSOMETHING ELSE: " + std::string(e.what()));
-        } catch (...) {
-            logError("???");
-            std::exception_ptr p = std::current_exception();
-            std::clog << (p ? p.__cxa_exception_type()->name() : "null")
-                      << std::endl;
+            logError("\tOTHER ERROR: " + std::string(e.what()));
         }
     }
 
@@ -140,6 +136,16 @@ class PubHubServer {
     Hub::HandlerFn publishHandler(const ChannelName& target, const std::string& message) {
         return [&]() {
             logWarn("\tPublish handler");
+            auto channel = hub.channelById(hub.channelIdByName(target));
+            for (auto& sub_id : channel.subscribers) {
+                logInfo("\tHandling sub of id: " + std::to_string(sub_id));
+                auto& subscriber = hub.clientByFd(sub_id);
+                auto msg = nlohmann::json {
+                    {"channel", target},
+                    {"content", message}
+                };
+                subscriber.publishMessage(msg);
+            }
         };
     }
     

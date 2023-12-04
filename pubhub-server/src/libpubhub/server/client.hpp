@@ -14,7 +14,7 @@ class Client {
     
     /// Socket for sending messages from subscribed channels.
     /// Initialized when accepting the client, but separately form the constructor.
-    ClientSocket broadcast_socket;
+    ClientSocket broadcast_socket{};
     std::set<ChannelId> subscriptions = {};
 
     Client();
@@ -27,6 +27,7 @@ class Client {
     void killConnection() noexcept;
     nlohmann::json receiveMessage();
     void sendMessage(const Payload &);
+    void publishMessage(nlohmann::json);
     std::string fmt() const noexcept;
 
     ~Client();

@@ -16,7 +16,7 @@ class SocketAddress {
     SocketAddress(sockaddr_in);
     SocketAddress(std::string ip, short unsigned port);
 
-    auto inner() -> sockaddr_in &;
+    auto inner() const -> sockaddr_in;
 
     std::string fmt();
 
