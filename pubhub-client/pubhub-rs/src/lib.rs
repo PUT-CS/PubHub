@@ -19,6 +19,27 @@ pub struct PubHubConnection {
     broadcast_listener: TcpStream,
 }
 
+trait PubHubReceiver {
+    fn next_pubhub_message(&mut self) -> std::result::Result<Vec<u8>, std::io::Error>;
+}
+
+impl PubHubReceiver for TcpStream {
+    fn next_pubhub_message(&mut self) -> std::result::Result<Vec<u8>, std::io::Error> {
+        // Read message size
+        let mut size_buffer = [0; size_of::<u32>()];
+        self.read_exact(&mut size_buffer)?;
+
+        // From network order
+        let size = u32::from_be_bytes(size_buffer);
+
+        // Read the actual message
+        let mut msg_buffer = Vec::with_capacity(size as usize);
+        self.read_exact(msg_buffer.as_mut_slice())?;
+        
+        Ok(msg_buffer)
+    }
+}
+
 impl PubHubConnection {
     pub fn new(addr: (Ipv4Addr, u16)) -> std::result::Result<Self, std::io::Error> {
         let request_stream = TcpStream::connect(&addr)?;
@@ -61,25 +82,20 @@ impl PubHubConnection {
 
     /// Block while waiting for the next incoming response
     fn await_response(&mut self) -> Result<Response> {
-        let mut size_buffer = [0; size_of::<u32>()];
-
-        self.request_stream.read_exact(&mut size_buffer)?;
-
-        // From network order
-        let size = u32::from_be_bytes(size_buffer);
-
-        let mut msg_buffer: Vec<u8> = Vec::with_capacity(size as usize);
-        self.request_stream.read_exact(msg_buffer.as_mut_slice())?;
-
-        let msg = String::from_utf8(msg_buffer)?;
+        let message_bytes = self.request_stream.next_pubhub_message()?;
+        let msg = String::from_utf8(message_bytes)?;
         let json: Value = serde_json::from_str(&msg)?;
 
         Response::try_from(json)
     }
 
     /// Receive a message from the broadcast listener
-    fn next_broadcast(&mut self) {
-        
+    fn next_broadcast(&mut self) -> Result<serde_json::Value> {
+        let message_bytes = self.broadcast_listener.next_pubhub_message()?;
+        let msg = String::from_utf8(message_bytes)?;
+        let json = serde_json::from_str(&msg)?;
+
+        Ok(json)
     }
 }
 
