@@ -1,9 +1,11 @@
 #include "libpubhub/common.hpp"
+#include "libpubhub/json.hpp"
 #include "libpubhub/server/exceptions.hpp"
 #include "libpubhub/server/hub.hpp"
 #include "libpubhub/server/message.hpp"
 #include "libpubhub/server/types.hpp"
 #include <algorithm>
+#include <cstdint>
 #include <exception>
 #include <functional>
 #include <string>
@@ -95,12 +97,7 @@ class PubHubServer {
         } catch(const InvalidInputException& e) {
             logError("\tINVALID INPUT: " + std::string(e.what()));
         } catch(const std::exception& e) {
-            logError("\tSOMETHING ELSE: " + std::string(e.what()));
-        } catch (...) {
-            logError("???");
-            std::exception_ptr p = std::current_exception();
-            std::clog << (p ? p.__cxa_exception_type()->name() : "null")
-                      << std::endl;
+            logError("\tOTHER ERROR: " + std::string(e.what()));
         }
     }
 
@@ -139,6 +136,16 @@ class PubHubServer {
     Hub::HandlerFn publishHandler(const ChannelName& target, const std::string& message) {
         return [&]() {
             logWarn("\tPublish handler");
+            auto channel = hub.channelById(hub.channelIdByName(target));
+            for (auto& sub_id : channel.subscribers) {
+                logInfo("\tHandling sub of id: " + std::to_string(sub_id));
+                auto& subscriber = hub.clientByFd(sub_id);
+                auto msg = nlohmann::json {
+                    {"channel", target},
+                    {"content", message}
+                };
+                subscriber.publishMessage(msg);
+            }
         };
     }
     
@@ -157,8 +164,11 @@ class PubHubServer {
 
 ChannelId Channel::channel_id_gen = 0;
 
+constexpr uint16_t SERVER_PORT = 8080;
+constexpr auto SERVER_ADDR = "127.0.0.1";
+
 int main() {
-    const auto addr = SocketAddress("127.0.0.1", 8080);
+    const auto addr = SocketAddress(SERVER_ADDR, SERVER_PORT);
     auto server = PubHubServer(addr);
     logInfo("Server created");
     server.run();

@@ -32,8 +32,8 @@ class ClientSocket : public Socket {
     ClientSocket(SocketAddress);
     ClientSocket(FileDescriptor, SocketAddress);
     void connect();
-
-    std::string fmt() noexcept;
+    
+    std::string fmt() const noexcept;
     
     ~ClientSocket(){};
 };

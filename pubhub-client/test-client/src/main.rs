@@ -1,18 +1,17 @@
 use pubhub_rs::{request::Request, PubHubConnection};
-use std::time::Duration;
+use std::{time::Duration, net::Ipv4Addr};
 
 type Result<T> = std::result::Result<T, anyhow::Error>;
 
 fn main() -> Result<()> {
-    let addr = ("127.0.0.1", 8080);
+    let addr = (Ipv4Addr::LOCALHOST, 8080);
     let mut conn = PubHubConnection::new(addr)?;
 
     let requests = &[
         Request::CreateChannel("testchannel1".into()),
         Request::CreateChannel("testchannel2".into()),
         Request::CreateChannel("testchannel3".into()),
-        Request::CreateChannel("testchannel4".into()),
-        Request::CreateChannel("testchannel4".into()),
+        Request::Subscribe("testchannel1".into()),
         Request::Publish {
             channel: "testchannel1".into(),
             content: "Hello!".into(),
@@ -38,7 +37,7 @@ fn main() -> Result<()> {
         println!("{:<70} -> {res:->30?}", req.to_json().to_string());
     }
 
-    std::thread::sleep(Duration::from_secs(1));
-
-    Ok(())
+    loop {
+        
+    }
 }

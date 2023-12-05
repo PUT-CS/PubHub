@@ -1,4 +1,6 @@
 #pragma once
+#include <cstdint>
+#include <optional>
 #ifndef CLIENT_H
 #define CLIENT_H
 #include "../net/Socket.hpp"
@@ -7,18 +9,25 @@
 
 class Client {
   public:
+    /// Socket used for exchange of requests and responses
     ClientSocket socket;
-    std::set<ChannelId> subscriptions;
+    
+    /// Socket for sending messages from subscribed channels.
+    /// Initialized when accepting the client, but separately form the constructor.
+    ClientSocket broadcast_socket{};
+    std::set<ChannelId> subscriptions = {};
 
     Client();
     Client(ClientSocket);
 
+    void initializeBroadcast(uint16_t);
     void subscribeTo(ChannelId) noexcept;
     void unsubscribeFrom(ChannelId) noexcept;
     FileDescriptor getFd() const noexcept;
     void killConnection() noexcept;
     nlohmann::json receiveMessage();
     void sendMessage(const Payload &);
+    void publishMessage(nlohmann::json);
     std::string fmt() const noexcept;
 
     ~Client();
