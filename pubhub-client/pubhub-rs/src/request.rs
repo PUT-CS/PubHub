@@ -7,7 +7,10 @@ pub enum Request {
     Unsubscribe(String),
     CreateChannel(String),
     DeleteChannel(String),
-    Publish { channel: String, content: String },
+    Publish {
+        channel: String,
+        content: serde_json::Value,
+    },
     Ask,
 }
 
@@ -18,28 +21,32 @@ impl Request {
         m.insert("kind".into(), Value::String(self.to_string()));
 
         use Request as R;
-        let new_values: Vec<(&str, String)> = match self {
+        let new_values: Vec<(&str, Value)> = match self {
             R::Subscribe(name)
             | R::Unsubscribe(name)
             | R::CreateChannel(name)
             | R::DeleteChannel(name) => {
-                vec![("channel", name.to_string())]
+                vec![("channel", Value::String(name.to_string()))]
             }
-            R::Publish { channel, content } => vec![("channel", channel.to_string()), ("content", content.to_string())],
+            R::Publish { channel, content } => vec![
+                ("channel", Value::String(channel.to_string())),
+                ("content", content.clone()),
+            ],
             R::Ask => vec![],
         };
 
         for (k, v) in new_values {
-            m.insert(k.to_string(), Value::String(v));
+            m.insert(k.to_string(), v);
         }
+
         Value::Object(m)
     }
 }
 
 #[cfg(test)]
 mod test {
-    use serde_json::json;
     use crate::request::Request;
+    use serde_json::json;
 
     #[test]
     fn subscribe_request_to_json() {
