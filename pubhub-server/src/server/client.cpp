@@ -23,8 +23,6 @@ void Client::initializeBroadcast(uint16_t to_port) {
     auto old_addr = this->socket.address();
     auto broadcast_addr = SocketAddress(old_addr.getIp(), to_port);
 
-    logInfo("Initializing broadcast to " + broadcast_addr.fmt() + "...");
-
     //this->broadcast_socket = ClientSocket(broadcast_addr);
     this->broadcast_socket = ClientSocket(broadcast_addr);
     
@@ -61,9 +59,11 @@ nlohmann::json Client::receiveMessage() {
     return nlohmann::json::parse(s);
 }
 
-void Client::sendMessage(const Payload &message) {
-    this->socket.send(message.getContent().dump());
-}
+/// CHANGE THIS
+// void Client::sendMessage(const int &message) {
+//     std::exit(1);
+//     //this->socket.send(message.getContent().dump());
+// }
 
 void Client::publishMessage(nlohmann::json message) {
     logWarn("\tSending to " + this->broadcast_socket.address().getIp() + ":" +

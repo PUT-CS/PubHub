@@ -1,4 +1,5 @@
 #pragma once
+#include "client.hpp"
 #include "message.hpp"
 #include "types.hpp"
 #include <functional>
@@ -20,31 +21,36 @@ class Hub {
      **/
     std::vector<pollfd> poll_fds;
 
-    // const std::map<std::string, PayloadKind> PayloadKind_map = {
-    //     {"Subscribe", PayloadKind::Subscribe},
-    //     {"Unsubscribe", PayloadKind::Unsubscribe},
-    //     {"CreateChannel", PayloadKind::CreateChannel},
-    //     {"DeleteChannel", PayloadKind::DeleteChannel},
-    //     {"Publish", PayloadKind::Publish}
-    // };
-
   public:
     typedef std::function<void ()> HandlerFn;
     
     static const auto POLL_ERROR = POLLERR | POLLNVAL | POLLHUP | POLLRDHUP;
     static const auto POLL_INPUT = POLLIN;
 
-    /// ClientId is the Client's file descriptor
     std::unordered_map<FileDescriptor, Client> clients;
     std::unordered_map<ChannelId, Channel> channels;
 
     SocketAddress addr;
     std::unique_ptr<ServerSocket> socket;
 
+    
     Hub(SocketAddress);
+
+    void run();
+    void handleEvent(Event);
+    void handleInput(FileDescriptor);
+    void handleDisconnect(FileDescriptor fd);
+    void handleNewConnection();
+
+    HandlerFn subscribeHandler(const Client& client, const ChannelName& target);
+    HandlerFn unsubscribeHandler(const Client& client, const ChannelName& target);
+    HandlerFn createChannelHandler(const ChannelName& target);
+    HandlerFn deleteChannelHandler(const ChannelName& target);
+    HandlerFn publishHandler(const ChannelName& target, const std::string& content);
+    
     Event nextEvent(time_t);
     Client accept();
-
+    
     void addClient(Client) noexcept;
     void removeClientByFd(FileDescriptor);
     auto clientByFd(FileDescriptor) -> Client &;

@@ -4,8 +4,7 @@
 
 #include "types.hpp"
 
-// Maybe `enum class` later?
-enum EventKind {
+enum class EventKind {
     Input,
     Disconnect,
     ConnectionRequest,
@@ -21,12 +20,5 @@ struct Event {
     EventKind kind;
     FileDescriptor fd;
 };
-// class Event {
-//   public:
-//     EventKind kind;
-//     int clientFd;
-
-//     Event(EventKind kind, FileDescriptor fd) : kind(kind), clientFd(fd) {}
-// };
 
 #endif

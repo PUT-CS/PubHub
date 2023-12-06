@@ -1,10 +1,13 @@
 #pragma once
-#include <cstdint>
-#include <optional>
+
 #ifndef CLIENT_H
 #define CLIENT_H
+
+#include <cstdint>
+#include <optional>
 #include "../net/Socket.hpp"
 #include "message.hpp"
+#include "../json.hpp"
 #include <set>
 
 class Client {
@@ -26,7 +29,7 @@ class Client {
     FileDescriptor getFd() const noexcept;
     void killConnection() noexcept;
     nlohmann::json receiveMessage();
-    void sendMessage(const Payload &);
+    //void sendMessage(const int &);
     void publishMessage(nlohmann::json);
     std::string fmt() const noexcept;
 
