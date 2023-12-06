@@ -1,9 +1,9 @@
-#include "libpubhub/common.hpp"
-#include "libpubhub/json.hpp"
-#include "libpubhub/server/exceptions.hpp"
-#include "libpubhub/server/hub.hpp"
-#include "libpubhub/server/message.hpp"
-#include "libpubhub/server/types.hpp"
+#include "common.hpp"
+#include "json.hpp"
+#include "server/exceptions.hpp"
+#include "server/hub.hpp"
+#include "server/message.hpp"
+#include "server/types.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <exception>
