@@ -5,9 +5,6 @@
 #include "exceptions.hpp"
 #include "types.hpp"
 #include <algorithm>
-#include <string>
-#include <unordered_map>
-#include <utility>
 
 /// Create the Hub. Initializes the server socket and the first pollfd.
 Hub::Hub(SocketAddress addr) {
@@ -18,6 +15,154 @@ Hub::Hub(SocketAddress addr) {
     pollfd server_pollfd = {this->socket->fd, Hub::POLL_INPUT | Hub::POLL_ERROR,
                             0};
     this->poll_fds.push_back(server_pollfd);
+}
+
+void Hub::run() {
+    logInfo("Starting the PubHub Server...");
+    while (true) {
+        auto event = this->nextEvent(-1);
+        this->handleEvent(event);
+    }
+}
+
+void Hub::handleEvent(Event event) {
+    switch (event.kind) {
+    case EventKind::Input:
+        this->handleInput(event.fd);
+        break;
+    case EventKind::Disconnect:
+        this->handleDisconnect(event.fd);
+        break;
+    case EventKind::ConnectionRequest:
+        this->handleNewConnection();
+        break;
+    case EventKind::Nil:
+        // Unreachable if nextEvent was called with a negative value
+        break;
+    }
+}
+
+void Hub::handleInput(FileDescriptor fd) {
+    // Look for a client with an event
+    // Client sent data and it's ready to read
+    // TODO: Catch
+    auto &client = this->clientByFd(fd);
+    auto msg = client.receiveMessage();
+
+    std::string target_channel;
+    try {
+        target_channel = msg.at("channel");
+    } catch (const std::exception &e) {
+        logError(e.what());
+        return;
+    }
+
+    auto kind_str = msg.at("kind");
+    auto kind = Request::fromString(kind_str);
+    std::function<void()> handler{};
+
+    using Request::RequestKind;
+    switch (kind) {
+    case RequestKind::Subscribe:
+        handler = subscribeHandler(client, target_channel);
+        break;
+    case RequestKind::Unsubscribe:
+        handler = unsubscribeHandler(client, target_channel);
+        break;
+    case RequestKind::CreateChannel:
+        handler = createChannelHandler(target_channel);
+        break;
+    case RequestKind::DeleteChannel:
+        handler = deleteChannelHandler(target_channel);
+        break;
+    case RequestKind::Publish:
+        // check if message has content
+        handler = publishHandler(target_channel, msg.at("content"));
+        break;
+    case RequestKind::Ask:
+        for (auto i : this->channels) {
+            std::cout << i.first << " " + i.second.name << std::endl;
+        }
+        break;
+    default:
+        logWarn("Reached default branch while handling input");
+        break;
+    }
+
+    auto msg_str = msg.dump();
+    logInfo("Received from " + std::to_string(fd) + ": " + msg_str);
+
+    try {
+        logInfo("Calling handler");
+        handler();
+        logInfo("Exit handler");
+    } catch (const InternalErrorException &e) {
+        logError("\tINTERNAL ERROR: " + std::string(e.what()));
+    } catch (const InvalidInputException &e) {
+        logError("\tINVALID INPUT: " + std::string(e.what()));
+    } catch (const std::exception &e) {
+        logError("\tOTHER ERROR: " + std::string(e.what()));
+    }
+}
+
+Hub::HandlerFn Hub::subscribeHandler(const Client &client,
+                                     const ChannelName &target) {
+    return [&]() {
+        logWarn("\tSubscribe handler");
+        this->addSubscription(client.getFd(), target);
+        this->debugLogChannels();
+    };
+}
+
+Hub::HandlerFn Hub::unsubscribeHandler(const Client &client,
+                                       const ChannelName &target) {
+    return [&]() {
+        logWarn("\tUnsubscribe handler");
+        this->removeSubscription(client.getFd(), target);
+        this->debugLogChannels();
+    };
+}
+
+Hub::HandlerFn Hub::createChannelHandler(const ChannelName &target) {
+    return [&]() {
+        logWarn("\tAdding channel");
+        this->addChannel(target);
+        this->debugLogChannels();
+    };
+}
+
+Hub::HandlerFn Hub::deleteChannelHandler(const ChannelName &target) {
+    return [&]() {
+        logWarn("\tDeleting channel");
+        this->deleteChannel(target);
+        this->debugLogChannels();
+    };
+}
+
+Hub::HandlerFn Hub::publishHandler(const ChannelName &target,
+                                   const std::string &message) {
+    return [&]() {
+        logWarn("\tPublish handler");
+        auto channel = this->channelById(this->channelIdByName(target));
+        for (auto &sub_id : channel.subscribers) {
+            logInfo("\tHandling sub of id: " + std::to_string(sub_id));
+            auto &subscriber = this->clientByFd(sub_id);
+            auto msg =
+                nlohmann::json{{"channel", target}, {"content", message}};
+            subscriber.publishMessage(msg);
+        }
+    };
+}
+
+void Hub::handleDisconnect(FileDescriptor fd) {
+    this->removeClientByFd(fd);
+    logWarn("Client disconnected: " + std::to_string(fd));
+}
+
+void Hub::handleNewConnection() {
+    auto client = this->accept();
+    this->addClient(client);
+    logInfo("Added Client: " + client.fmt());
 }
 
 /**
@@ -67,10 +212,10 @@ Event Hub::nextEvent(time_t timeout) {
 Client Hub::accept() {
     auto client_socket = this->socket->accept();
     auto client = Client(client_socket);
-    
+
     auto hub_port = this->socket->address().getPort();
     client.initializeBroadcast(hub_port + 1);
-    
+
     return client;
 }
 
@@ -91,7 +236,7 @@ void Hub::removeClientByFd(int fd) {
     auto client = this->clientByFd(fd);
 
     client.killConnection();
-    
+
     // Remove all subscriptions of that client
     for (auto &sub_id : client.subscriptions) {
         this->channels[sub_id].removeSubscriber(client.getFd());

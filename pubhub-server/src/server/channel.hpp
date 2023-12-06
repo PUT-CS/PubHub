@@ -1,13 +1,15 @@
 #pragma once
-#include <string>
+
 #ifndef QUEUE_H
 #define QUEUE_H
 
-#include "client.hpp"
+#include "types.hpp"
+#include <set>
+#include <string>
 
 class Channel {
+    static inline ChannelId idGen = 0;
     public:
-    static ChannelId channel_id_gen;
     ChannelName name;
     std::set<ClientId> subscribers;
     ChannelId id;
@@ -15,7 +17,6 @@ class Channel {
     Channel();
     Channel(std::string);
     
-    void setName(ChannelName);
     void addSubscriber(ClientId) noexcept;
     void removeSubscriber(ClientId) noexcept;
     

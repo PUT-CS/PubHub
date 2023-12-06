@@ -75,7 +75,7 @@ void Socket::send(const std::string &message) {
 };
 
 auto Socket::address() const noexcept -> const SocketAddress & {
-    return this->addr;
+    return std::ref(this->addr);
 }
 
 /**
@@ -175,7 +175,6 @@ ClientSocket ServerSocket::accept() {
 
 ClientSocket::ClientSocket(SocketAddress addr) {
     this->addr = addr;
-    logWarn("Creating ClientSocket from Addr: " + addr.fmt());
     this->create();
 }
 

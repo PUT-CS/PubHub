@@ -5,7 +5,7 @@ SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
 
-NLOHMANN_JSON = $(LIB_DIR)/json.hpp
+NLOHMANN_JSON = $(SRC_DIR)/json.hpp
 NLOHMANN_JSON_PCH = $(NLOHMANN_JSON).pch
 
 # Compiler and compiler flags
@@ -22,8 +22,6 @@ OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
 
 # Executable name
 EXECUTABLE = $(BIN_DIR)/pubhub
-LIB_DIR = $(SRC_DIR)/libpubhub
-
 
 all: json $(EXECUTABLE)
 
