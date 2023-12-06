@@ -1,6 +1,6 @@
 #pragma once
 #include "client.hpp"
-#include "message.hpp"
+#include "request.hpp"
 #include "types.hpp"
 #include <functional>
 #ifndef HUB_H

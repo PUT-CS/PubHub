@@ -5,9 +5,6 @@
 #include "exceptions.hpp"
 #include "types.hpp"
 #include <algorithm>
-#include <string>
-#include <unordered_map>
-#include <utility>
 
 /// Create the Hub. Initializes the server socket and the first pollfd.
 Hub::Hub(SocketAddress addr) {
