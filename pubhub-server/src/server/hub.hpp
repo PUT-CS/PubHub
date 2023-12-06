@@ -14,16 +14,12 @@
 
 class Hub {
   private:
-
-  public:
     typedef std::function<void ()> HandlerFn;
     
     std::unique_ptr<ServerSocket> socket;
     StateController state_controller;
     
-    Hub(SocketAddress);
 
-    void run();
     void handleEvent(Event);
     void handleInput(FileDescriptor);
     void handleDisconnect(FileDescriptor fd);
@@ -34,10 +30,13 @@ class Hub {
     HandlerFn createChannelHandler(const ChannelName& target);
     HandlerFn deleteChannelHandler(const ChannelName& target);
     HandlerFn publishHandler(const ChannelName& target, const std::string& content);
+    HandlerFn askHandler();
     
-    Event nextEvent(time_t);
     Client accept();
 
+  public:
+    Hub(SocketAddress);
+    void run();
     ~Hub();
 };
 

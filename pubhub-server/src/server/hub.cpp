@@ -12,13 +12,13 @@ Hub::Hub(SocketAddress addr) {
     this->socket->bind();
     this->socket->listen();
 
-    this->state_controller.registerPollFdFor(this->socket->fd);
+    state_controller.registerPollFdFor(this->socket->fd);
 }
 
 void Hub::run() {
     logInfo("Starting the PubHub Server...");
     while (true) {
-        auto event = this->state_controller.nextEvent();
+        auto event = state_controller.nextEvent();
         this->handleEvent(event);
     }
 }
@@ -44,7 +44,7 @@ void Hub::handleInput(FileDescriptor fd) {
     // Look for a client with an event
     // Client sent data and it's ready to read
     // TODO: Catch
-    auto &client = this->state_controller.clientByFd(fd);
+    auto &client = state_controller.clientByFd(fd);
     auto msg = client.receiveMessage();
 
     std::string target_channel;
@@ -74,13 +74,11 @@ void Hub::handleInput(FileDescriptor fd) {
         handler = deleteChannelHandler(target_channel);
         break;
     case RequestKind::Publish:
-        // check if message has content
+        // check if message has content, handle error
         handler = publishHandler(target_channel, msg.at("content"));
         break;
     case RequestKind::Ask:
-        for (auto& i : this->state_controller.getChannels()) {
-            std::cout << i.first << " " + i.second.name << std::endl;
-        }
+        handler = askHandler();
         break;
     default:
         logWarn("Reached default branch while handling input");
@@ -107,8 +105,8 @@ Hub::HandlerFn Hub::subscribeHandler(const Client &client,
                                      const ChannelName &target) {
     return [&]() {
         logWarn("\tSubscribe handler");
-        this->state_controller.addSubscription(client.getFd(), target);
-        this->state_controller.debugLogChannels();
+        state_controller.addSubscription(client.getFd(), target);
+        state_controller.debugLogChannels();
     };
 }
 
@@ -116,24 +114,24 @@ Hub::HandlerFn Hub::unsubscribeHandler(const Client &client,
                                        const ChannelName &target) {
     return [&]() {
         logWarn("\tUnsubscribe handler");
-        this->state_controller.removeSubscription(client.getFd(), target);
-        this->state_controller.debugLogChannels();
+        state_controller.removeSubscription(client.getFd(), target);
+        state_controller.debugLogChannels();
     };
 }
 
 Hub::HandlerFn Hub::createChannelHandler(const ChannelName &target) {
     return [&]() {
         logWarn("\tAdding channel");
-        this->state_controller.addChannel(target);
-        this->state_controller.debugLogChannels();
+        state_controller.addChannel(target);
+        state_controller.debugLogChannels();
     };
 }
 
 Hub::HandlerFn Hub::deleteChannelHandler(const ChannelName &target) {
     return [&]() {
         logWarn("\tDeleting channel");
-        this->state_controller.deleteChannel(target);
-        this->state_controller.debugLogChannels();
+        state_controller.deleteChannel(target);
+        state_controller.debugLogChannels();
     };
 }
 
@@ -141,10 +139,10 @@ Hub::HandlerFn Hub::publishHandler(const ChannelName &target,
                                    const std::string &message) {
     return [&]() {
         logWarn("\tPublish handler");
-        auto channel = this->state_controller.channelById(this->state_controller.channelIdByName(target));
+        auto channel = state_controller.channelById(state_controller.channelIdByName(target));
         for (auto &sub_id : channel.subscribers) {
             logInfo("\tHandling sub of id: " + std::to_string(sub_id));
-            auto &subscriber = this->state_controller.clientByFd(sub_id);
+            auto &subscriber = state_controller.clientByFd(sub_id);
             auto msg =
                 nlohmann::json{{"channel", target}, {"content", message}};
             subscriber.publishMessage(msg);
@@ -152,14 +150,23 @@ Hub::HandlerFn Hub::publishHandler(const ChannelName &target,
     };
 }
 
+Hub::HandlerFn Hub::askHandler() {
+    return [&]() {
+        logWarn("Unfinished handler...");
+        for (auto &i : state_controller.getChannels()) {
+            std::cout << i.first << " " + i.second.name << std::endl;
+        }
+    };
+}
+
 void Hub::handleDisconnect(FileDescriptor fd) {
-    this->state_controller.removeClientByFd(fd);
+    state_controller.removeClientByFd(fd);
     logWarn("Client disconnected: " + std::to_string(fd));
 }
 
 void Hub::handleNewConnection() {
     auto client = this->accept();
-    this->state_controller.addClient(client);
+    state_controller.addClient(client);
     logInfo("Added Client: " + client.fmt());
 }
 
