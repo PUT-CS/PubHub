@@ -8,6 +8,7 @@
 #include "../net/Socket.hpp"
 #include "request.hpp"
 #include "../json.hpp"
+#include "response.hpp"
 #include <set>
 
 class Client {
@@ -29,7 +30,7 @@ class Client {
     FileDescriptor getFd() const noexcept;
     void killConnection() noexcept;
     nlohmann::json receiveMessage();
-    //void sendMessage(const int &);
+    void sendResponse(const Response&);
     void publishMessage(nlohmann::json);
     std::string fmt() const noexcept;
 

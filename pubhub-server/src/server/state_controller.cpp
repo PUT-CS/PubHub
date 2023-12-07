@@ -68,11 +68,7 @@ void StateController::addClient(Client client) noexcept {
     this->clients.insert({client.getFd(), client});
 }
 
-/**
-   Throws:
-   - **ClientException** if there's no Client with passed file descriptor (ID)
- **/
-void StateController::removeClientByFd(int fd) {
+void StateController::removeClientByFd(int fd) noexcept {
     auto client = this->clientByFd(fd);
 
     client.killConnection();

@@ -14,16 +14,16 @@
 
 class Hub {
   private:
-    typedef std::function<void ()> HandlerFn;
-    
+    typedef std::function<Response ()> HandlerFn;
+
     std::unique_ptr<ServerSocket> socket;
     StateController state_controller;
     
 
     void handleEvent(Event);
     void handleInput(FileDescriptor);
-    void handleDisconnect(FileDescriptor fd);
-    void handleNewConnection();
+    void handleDisconnect(FileDescriptor fd) noexcept;
+    void handleNewConnection() noexcept;
 
     HandlerFn subscribeHandler(const Client& client, const ChannelName& target);
     HandlerFn unsubscribeHandler(const Client& client, const ChannelName& target);

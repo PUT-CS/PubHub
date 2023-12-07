@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <netinet/in.h>
 #include <optional>
+#include <string>
 #include <unistd.h>
 
 Client::Client(ClientSocket socket) : socket(socket) {}
@@ -59,18 +60,18 @@ nlohmann::json Client::receiveMessage() {
     return nlohmann::json::parse(s);
 }
 
-/// CHANGE THIS
-// void Client::sendMessage(const int &message) {
-//     std::exit(1);
-//     //this->socket.send(message.getContent().dump());
-// }
-
 void Client::publishMessage(nlohmann::json message) {
     logWarn("\tSending to " + this->broadcast_socket.address().getIp() + ":" +
             std::to_string(this->broadcast_socket.address().getPort()));
 
     this->broadcast_socket.send(message.dump());
     logInfo("Published " + message.dump(2) + " to " + this->fmt());
+}
+
+void Client::sendResponse(const Response& response) {
+    auto res_str = response.toJson().dump();
+    logInfo("Responding with " + res_str);
+    this->socket.send(res_str);
 }
 
 std::string Client::fmt() const noexcept {

@@ -30,7 +30,7 @@ class StateController {
 
     auto getClients() noexcept -> std::unordered_map<ClientId, Client> &;
     void addClient(Client) noexcept;
-    void removeClientByFd(FileDescriptor);
+    void removeClientByFd(FileDescriptor) noexcept;
     auto clientByFd(FileDescriptor) -> Client &;
 
     void addSubscription(ClientId, ChannelName);
