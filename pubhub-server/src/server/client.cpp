@@ -61,11 +61,16 @@ nlohmann::json Client::receiveMessage() {
 }
 
 void Client::publishMessage(nlohmann::json message) {
+    logWarn("Here0");
     logWarn("\tSending to " + this->broadcast_socket.address().getIp() + ":" +
             std::to_string(this->broadcast_socket.address().getPort()));
-
-    this->broadcast_socket.send(message.dump());
+    logWarn("Here1");
+    auto msg_str = message.dump();
+    logWarn("Here10");
+    this->broadcast_socket.send(msg_str);
+    logWarn("Here2");
     logInfo("Published " + message.dump(2) + " to " + this->fmt());
+    logWarn("Here3");
 }
 
 void Client::sendResponse(const Response& response) {

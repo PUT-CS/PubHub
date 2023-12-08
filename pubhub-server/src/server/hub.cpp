@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdlib>
+#include <string>
 #include <thread>
 
 /// Create the Hub. Initializes the server socket and the first pollfd.
@@ -62,6 +63,8 @@ void Hub::handleInput(FileDescriptor fd) {
         client.sendResponse(response);
     }
 
+    print(request.dump(4));
+
     std::string target_channel;
     try {
         target_channel = request.at("channel");
@@ -90,6 +93,7 @@ void Hub::handleInput(FileDescriptor fd) {
         break;
     case RequestKind::Publish:
         // check if message has content, handle error
+        print(request.at("content"));
         handler = publishHandler(target_channel, request.at("content"));
         break;
     case RequestKind::Ask:
@@ -121,7 +125,7 @@ void Hub::handleInput(FileDescriptor fd) {
 
 Hub::HandlerFn Hub::subscribeHandler(const Client &client,
                                      const ChannelName &target) {
-    return [&]() {
+    return [=]() {
         logWarn("\tSubscribe handler");
         state_controller.addSubscription(client.getFd(), target);
         state_controller.debugLogChannels();
@@ -131,7 +135,7 @@ Hub::HandlerFn Hub::subscribeHandler(const Client &client,
 
 Hub::HandlerFn Hub::unsubscribeHandler(const Client &client,
                                        const ChannelName &target) {
-    return [&]() {
+    return [=]() {
         logWarn("\tUnsubscribe handler");
         state_controller.removeSubscription(client.getFd(), target);
         state_controller.debugLogChannels();
@@ -140,7 +144,7 @@ Hub::HandlerFn Hub::unsubscribeHandler(const Client &client,
 }
 
 Hub::HandlerFn Hub::createChannelHandler(const ChannelName &target) {
-    return [&]() {
+    return [=]() {
         logWarn("\tAdding channel");
         state_controller.addChannel(target);
         state_controller.debugLogChannels();
@@ -149,7 +153,7 @@ Hub::HandlerFn Hub::createChannelHandler(const ChannelName &target) {
 }
 
 Hub::HandlerFn Hub::deleteChannelHandler(const ChannelName &target) {
-    return [&]() {
+    return [=]() {
         logWarn("\tDeleting channel");
         state_controller.deleteChannel(target);
         state_controller.debugLogChannels();
@@ -159,7 +163,8 @@ Hub::HandlerFn Hub::deleteChannelHandler(const ChannelName &target) {
 
 Hub::HandlerFn Hub::publishHandler(const ChannelName &target,
                                    const std::string &message) {
-    return [&]() {
+    return [=]() {
+        logWarn(message);
         logWarn("\tPublish handler");
         auto channel = state_controller.channelById(state_controller.channelIdByName(target));
         for (auto &sub_id : channel.subscribers) {
@@ -174,7 +179,7 @@ Hub::HandlerFn Hub::publishHandler(const ChannelName &target,
 }
 
 Hub::HandlerFn Hub::askHandler() {
-    return [&]() {
+    return [=]() {
         logWarn("Unfinished handler...");
         for (auto &i : state_controller.getChannels()) {
             std::cout << i.first << " " + i.second.name << std::endl;

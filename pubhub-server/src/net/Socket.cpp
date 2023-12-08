@@ -63,17 +63,22 @@ std::string Socket::receive() {
  **/
 void Socket::send(std::string message) {
     uint32_t msg_size = message.size();
-    
+    logWarn("Here4");
     uint32_t net_msg_size = htonl(msg_size);
+    logWarn("Here5");
     int bytes_sent = ::send(this->fd, &net_msg_size, sizeof(net_msg_size), 0);
+    logWarn("Here6");
     if (bytes_sent == -1) {
         throw NetworkException("Send");
     }
+    logWarn("Here7");
 
     int message_bytes_sent = ::send(this->fd, message.c_str(), msg_size, 0);
+    logWarn("Here8");
     if (message_bytes_sent == -1) {
         throw NetworkException("Send");
     }
+    logWarn("Here9");
 };
 
 auto Socket::address() const noexcept -> const SocketAddress & {

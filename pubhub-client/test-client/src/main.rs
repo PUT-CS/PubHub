@@ -12,9 +12,14 @@ fn main() -> Result<()> {
         Request::CreateChannel("testchannel2".into()),
         Request::CreateChannel("testchannel3".into()),
         Request::Subscribe("testchannel1".into()),
+        Request::Subscribe("testchannel2".into()),
         Request::Publish {
             channel: "testchannel1".into(),
-            content: "Hello!".into(),
+            content: "Hello to channel1!".into(),
+        },
+        Request::Publish {
+            channel: "testchannel2".into(),
+            content: "Hello to channel2!".into(),
         },
         Request::Subscribe("testchannel1".into()),
         Request::Subscribe("testchannel5".into()),
@@ -33,11 +38,20 @@ fn main() -> Result<()> {
 
     let responses = requests.iter().map(|r| conn.execute(&r));
 
+
     for (req, res) in requests.iter().zip(responses) {
         println!("{:<70} -> {res:->30?}", req.to_json().to_string());
     }
+    
+    let (_, mut listener) = conn.into_inner();
 
-    Ok(())
+    println!("listening...");
+    loop {
+        let msg = listener.next_message().unwrap();
+        eprintln!("{msg}");
+    }
+
+    //Ok(())
 
     // loop {
         

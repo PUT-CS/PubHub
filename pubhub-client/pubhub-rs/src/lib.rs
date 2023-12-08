@@ -82,7 +82,7 @@ impl RequestHandler {
 
 impl PublishReceiver {
     /// Receive a message from the broadcast listener
-    fn next_message(&mut self) -> Result<serde_json::Value> {
+    pub fn next_message(&mut self) -> Result<serde_json::Value> {
         let message_bytes = self.stream.next_pubhub_message()?;
         let msg = String::from_utf8(message_bytes)?;
         let json = serde_json::from_str(&msg)?;
