@@ -162,7 +162,7 @@ Hub::HandlerFn Hub::deleteChannelHandler(const ChannelName &target) {
 }
 
 Hub::HandlerFn Hub::publishHandler(const ChannelName &target,
-                                   const std::string &message) {
+                                   const nlohmann::json &message) {
     return [=]() {
         logWarn(message);
         logWarn("\tPublish handler");

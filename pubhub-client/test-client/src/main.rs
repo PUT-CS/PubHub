@@ -1,4 +1,6 @@
 use pubhub_rs::{request::Request, PubHubConnection};
+use rand::Rng;
+use serde_json::json;
 use std::net::Ipv4Addr;
 
 type Result<T> = std::result::Result<T, anyhow::Error>;
@@ -6,6 +8,8 @@ type Result<T> = std::result::Result<T, anyhow::Error>;
 fn main() -> Result<()> {
     let addr = (Ipv4Addr::LOCALHOST, 8080);
     let mut conn = PubHubConnection::new(addr)?;
+    const SIZE: usize = 100_000;
+    let huge_data: Vec<u8> = vec![rand::thread_rng().gen(); SIZE];
 
     let requests = &[
         Request::CreateChannel("testchannel1".into()),
@@ -15,7 +19,12 @@ fn main() -> Result<()> {
         Request::Subscribe("testchannel2".into()),
         Request::Publish {
             channel: "testchannel1".into(),
-            content: "Hello to channel1!".into(),
+            content: json!({
+                "a" : 1,
+                "b" : "bee",
+                "c" : [127,0,0,1],
+                //"huuuge": huge_data
+            })
         },
         Request::Publish {
             channel: "testchannel2".into(),
@@ -30,7 +39,7 @@ fn main() -> Result<()> {
         // nonexistent channel
         Request::Publish {
             channel: "null".into(),
-            content: "Hello!".into(),
+            content: "Hello".into()
         },
         Request::Subscribe("null".into()),
         Request::DeleteChannel("null".into()),
@@ -45,7 +54,7 @@ fn main() -> Result<()> {
     
     let (_, mut listener) = conn.into_inner();
 
-    println!("listening...");
+    println!("\nListening...\n");
     loop {
         let msg = listener.next_message().unwrap();
         eprintln!("{msg}");

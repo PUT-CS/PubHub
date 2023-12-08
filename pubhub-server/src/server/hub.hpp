@@ -29,7 +29,7 @@ class Hub {
     HandlerFn unsubscribeHandler(const Client& client, const ChannelName& target);
     HandlerFn createChannelHandler(const ChannelName& target);
     HandlerFn deleteChannelHandler(const ChannelName& target);
-    HandlerFn publishHandler(const ChannelName& target, const std::string& content);
+    HandlerFn publishHandler(const ChannelName& target, const nlohmann::json& content);
     HandlerFn askHandler();
     
     Client accept();
