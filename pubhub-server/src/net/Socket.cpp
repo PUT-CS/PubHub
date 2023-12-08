@@ -2,8 +2,10 @@
 #include "../common.hpp"
 #include "exceptions.hpp"
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <memory>
+#include <sys/socket.h>
 #include <unistd.h>
 
 /**
@@ -59,17 +61,17 @@ std::string Socket::receive() {
    Throws:
    - **NetworkException** if send() fails
  **/
-void Socket::send(const std::string &message) {
+void Socket::send(std::string message) {
     uint32_t msg_size = message.size();
     
     uint32_t net_msg_size = htonl(msg_size);
-    int bytes_send = ::send(this->fd, &net_msg_size, sizeof(net_msg_size), 0);
-    if (bytes_send == -1) {
+    int bytes_sent = ::send(this->fd, &net_msg_size, sizeof(net_msg_size), 0);
+    if (bytes_sent == -1) {
         throw NetworkException("Send");
     }
 
-    int message_bytes_send = ::send(this->fd, &message, msg_size, 0);
-    if (message_bytes_send == -1) {
+    int message_bytes_sent = ::send(this->fd, message.c_str(), msg_size, 0);
+    if (message_bytes_sent == -1) {
         throw NetworkException("Send");
     }
 };
@@ -83,7 +85,7 @@ auto Socket::address() const noexcept -> const SocketAddress & {
    - **NetworkException** if shutdown() or close() fails
  **/
 void Socket::kill() {
-    int s = ::shutdown(this->fd, SHUT_RDWR);
+    int s = ::shutdown(this->fd, SHUT_WR);
     int c = ::close(this->fd);
     if (!s || !c) {
         throw NetworkException("Shutdown or Close");

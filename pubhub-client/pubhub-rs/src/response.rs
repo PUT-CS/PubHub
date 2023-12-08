@@ -11,7 +11,7 @@ pub enum Response {
 impl TryFrom<serde_json::Value> for Response {
     type Error = anyhow::Error;
     fn try_from(value: serde_json::Value) -> Result<Self, Self::Error> {
-        let kind = match value.get("kind") {
+        let kind = match value.get("status") {
             Some(Value::String(s)) => s,
             _ => {
                 return Err(ConnectionError::new(
@@ -23,10 +23,9 @@ impl TryFrom<serde_json::Value> for Response {
 
         match kind.as_str() {
             "Ok" => {
-                dbg!("HERE");
                 Ok(Response::Ok { content: "".into() })
             }
-            "Error" => match value.get("why") {
+            "Error" => match value.get("info") {
                 Some(reason) => Ok(Response::Err {
                     why: reason.to_string(),
                 }),

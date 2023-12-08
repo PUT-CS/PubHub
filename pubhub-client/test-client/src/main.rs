@@ -1,5 +1,5 @@
 use pubhub_rs::{request::Request, PubHubConnection};
-use std::{time::Duration, net::Ipv4Addr};
+use std::net::Ipv4Addr;
 
 type Result<T> = std::result::Result<T, anyhow::Error>;
 
@@ -16,8 +16,8 @@ fn main() -> Result<()> {
             channel: "testchannel1".into(),
             content: "Hello!".into(),
         },
-        //Request::Ask,
         Request::Subscribe("testchannel1".into()),
+        Request::Subscribe("testchannel5".into()),
         Request::Unsubscribe("testchannel1".into()),
         Request::DeleteChannel("testchannel1".into()),
         //Request::Ask,
@@ -37,7 +37,9 @@ fn main() -> Result<()> {
         println!("{:<70} -> {res:->30?}", req.to_json().to_string());
     }
 
-    loop {
+    Ok(())
+
+    // loop {
         
-    }
+    // }
 }

@@ -40,8 +40,8 @@ impl PubHubReceiver for TcpStream {
         let size = u32::from_be_bytes(size_buffer);
 
         // Read the actual message
-        let mut msg_buffer = Vec::with_capacity(size as usize);
-        self.read_exact(msg_buffer.as_mut_slice())?;
+        let mut msg_buffer = vec![0; size as usize];
+        self.read_exact(&mut msg_buffer)?;
 
         Ok(msg_buffer)
     }
@@ -52,10 +52,9 @@ impl RequestHandler {
         let json = request.to_json().to_string();
 
         self.send_request(json)?;
-        //let res = self.await_response()?;
+        let res = self.await_response()?;
 
-        Ok(Response::Ok { content: "".into() })
-        //Ok(res)
+        Ok(res)
     }
 
     /// Issue a request to the PubHub Server
