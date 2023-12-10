@@ -17,15 +17,13 @@ impl TryFrom<serde_json::Value> for Response {
                 return Err(ConnectionError::new(
                     "Invalid server response, kind missing or malformated",
                 )
-                           .into());
+                .into());
             }
         };
 
         match kind.as_str() {
-            "Ok" => {
-                Ok(Response::Ok { content: "".into() })
-            }
-            "Error" => match value.get("info") {
+            "Ok" => Ok(Response::Ok { content: "".into() }),
+            "Error" => match value.get("why") {
                 Some(reason) => Ok(Response::Err {
                     why: reason.to_string(),
                 }),
@@ -48,7 +46,7 @@ mod test {
     #[test]
     fn response_from_invalid_kind_json() {
         let j = json!({
-            "kind" : "asdsa",
+            "status" : "asdsa",
         });
         assert!(Response::try_from(j).is_err())
     }
@@ -56,7 +54,7 @@ mod test {
     #[test]
     fn response_from_valid_ok_json() {
         let j = json!({
-            "kind" : "Ok",
+            "status" : "Ok",
         });
         assert!(Response::try_from(j).is_ok())
     }
@@ -64,7 +62,7 @@ mod test {
     #[test]
     fn response_from_invalid_err_json_no_reason() {
         let j = json!({
-            "kind" : "Error",
+            "status" : "Error",
         });
         assert!(Response::try_from(j).is_err())
     }
@@ -72,7 +70,7 @@ mod test {
     #[test]
     fn response_from_valid_err_json() {
         let j = json!({
-            "kind" : "Error",
+            "status" : "Error",
             "why" : "bad code"
         });
         assert!(Response::try_from(j).is_ok())

@@ -5,10 +5,8 @@
 #include "exceptions.hpp"
 #include "types.hpp"
 #include <algorithm>
-#include <chrono>
 #include <cstdlib>
 #include <string>
-#include <thread>
 
 /// Create the Hub. Initializes the server socket and the first pollfd.
 Hub::Hub(SocketAddress addr) {
@@ -62,8 +60,6 @@ void Hub::handleInput(FileDescriptor fd) {
         auto response = Response::InternalError();
         client.sendResponse(response);
     }
-
-    print(request.dump(4));
 
     std::string target_channel;
     try {

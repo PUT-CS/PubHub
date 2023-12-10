@@ -52,7 +52,7 @@ fn main() -> Result<()> {
         println!("{:<70} -> {res:->30?}", req.to_json().to_string());
     }
     
-    let (_, mut listener) = conn.into_inner();
+    let (_x, mut listener) = conn.into_inner();
 
     println!("\nListening...\n");
     loop {
