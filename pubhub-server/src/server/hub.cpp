@@ -2,10 +2,13 @@
 #include "../net/exceptions.hpp"
 #include "channel.hpp"
 #include "client.hpp"
+#include "event.hpp"
 #include "exceptions.hpp"
 #include "types.hpp"
 #include <algorithm>
+#include <cassert>
 #include <cstdlib>
+#include <mutex>
 #include <string>
 
 /// Create the Hub. Initializes the server socket and the first pollfd.
@@ -22,10 +25,24 @@ void Hub::run() {
     while (true) {
         auto event = state_controller.nextEvent();
         this->handleEvent(event);
+        logInfo("\n\nNEXT\n");
     }
 }
 
 void Hub::handleEvent(Event event) {
+    if (event.kind == EventKind::ConnectionRequest) {
+        this->handleNewConnection();
+        return;
+    }
+    
+    // Clear client events, preventing next `poll`s from reporting anything here
+    logInfo("Clearing events...");
+    state_controller.clearEventsByFd(event.fd);
+
+    // Disable polling for this client
+    logInfo("Disabling polling...");
+    state_controller.setPollingByFd(event.fd, false);
+
     switch (event.kind) {
     case EventKind::Input:
         this->handleInput(event.fd);
@@ -33,13 +50,13 @@ void Hub::handleEvent(Event event) {
     case EventKind::Disconnect:
         this->handleDisconnect(event.fd);
         break;
-    case EventKind::ConnectionRequest:
-        this->handleNewConnection();
-        break;
-    case EventKind::Nil:
-        // Unreachable if nextEvent was called with a negative value
+    default:
+        logError("Unreachable branch reached");
         break;
     }
+
+    logInfo("Enabling polling");
+    state_controller.setPollingByFd(event.fd, true);
 }
 
 void Hub::handleInput(FileDescriptor fd) {
@@ -49,6 +66,7 @@ void Hub::handleInput(FileDescriptor fd) {
     auto &client = state_controller.clientByFd(fd);
 
     nlohmann::json request;
+    // fix this
     try {
         request = client.receiveMessage();
     } catch (const NetworkException& e) {
@@ -62,6 +80,7 @@ void Hub::handleInput(FileDescriptor fd) {
     }
 
     std::string target_channel;
+    // fix this
     try {
         target_channel = request.at("channel");
     } catch (const std::exception &e) {
@@ -89,7 +108,6 @@ void Hub::handleInput(FileDescriptor fd) {
         break;
     case RequestKind::Publish:
         // check if message has content, handle error
-        print(request.at("content"));
         handler = publishHandler(target_channel, request.at("content"));
         break;
     case RequestKind::Ask:
@@ -160,7 +178,6 @@ Hub::HandlerFn Hub::deleteChannelHandler(const ChannelName &target) {
 Hub::HandlerFn Hub::publishHandler(const ChannelName &target,
                                    const nlohmann::json &message) {
     return [=]() {
-        logWarn(message);
         logWarn("\tPublish handler");
         auto channel = state_controller.channelById(state_controller.channelIdByName(target));
         for (auto &sub_id : channel.subscribers) {
@@ -185,7 +202,8 @@ Hub::HandlerFn Hub::askHandler() {
 }
 
 void Hub::handleDisconnect(FileDescriptor fd) noexcept {
-    state_controller.removeClientByFd(fd);
+    auto& client = state_controller.clientByFd(fd);
+    state_controller.removeClientByFd(client);
     logWarn("Client disconnected: " + std::to_string(fd));
 }
 

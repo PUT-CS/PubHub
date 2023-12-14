@@ -1,6 +1,8 @@
 #include "Socket.hpp"
 #include "../common.hpp"
 #include "exceptions.hpp"
+#include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -64,16 +66,24 @@ std::string Socket::receive() {
 void Socket::send(std::string message) {
     uint32_t msg_size = message.size();
     uint32_t net_msg_size = htonl(msg_size);
+
     int bytes_sent = ::send(this->fd, &net_msg_size, sizeof(net_msg_size), 0);
     if (bytes_sent == -1) {
         throw NetworkException("Send");
     }
-    
+
+    constexpr int CHUNK_SIZE = 1024 * 128; /// 128kB
     logWarn("Sending");
-    int message_bytes_sent = ::send(this->fd, message.c_str(), msg_size, 0);
-    logWarn("Sent");
-    if (message_bytes_sent == -1) {
-        throw NetworkException("Send");
+    int message_bytes_sent = 0;
+    while ((uint32_t)message_bytes_sent < msg_size) {
+        auto to_send = std::clamp((int)msg_size - message_bytes_sent, 0, CHUNK_SIZE);
+        auto data_ptr = message.c_str() + message_bytes_sent;
+        
+        message_bytes_sent += ::send(this->fd, data_ptr, to_send, 0);
+        logWarn("Sent " + std::to_string(message_bytes_sent));
+        if (message_bytes_sent == -1) {
+            throw NetworkException("Send");
+        }
     }
 };
 
@@ -175,7 +185,6 @@ ClientSocket ServerSocket::accept() {
 //
 // ClientSocket methods
 //
-
 ClientSocket::ClientSocket(SocketAddress addr) {
     this->addr = addr;
     this->create();

@@ -23,7 +23,7 @@ impl TryFrom<serde_json::Value> for Response {
 
         match kind.as_str() {
             "Ok" => Ok(Response::Ok { content: "".into() }),
-            "Error" => match value.get("why") {
+            "Error" => match value.get("info") {
                 Some(reason) => Ok(Response::Err {
                     why: reason.to_string(),
                 }),
@@ -71,7 +71,7 @@ mod test {
     fn response_from_valid_err_json() {
         let j = json!({
             "status" : "Error",
-            "why" : "bad code"
+            "info" : "bad code"
         });
         assert!(Response::try_from(j).is_ok())
     }

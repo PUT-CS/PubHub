@@ -2,12 +2,16 @@
 #include "../common.hpp"
 #include <arpa/inet.h>
 #include <cstdint>
+#include <memory>
+#include <mutex>
 #include <netinet/in.h>
 #include <optional>
 #include <string>
 #include <unistd.h>
 
-Client::Client(ClientSocket socket) : socket(socket) {}
+Client::Client(ClientSocket socket) : socket(socket) {
+    this->lock = new std::mutex();
+}
 
 FileDescriptor Client::getFd() const noexcept { return this->socket.fd; }
 
@@ -61,16 +65,11 @@ nlohmann::json Client::receiveMessage() {
 }
 
 void Client::publishMessage(nlohmann::json message) {
-    logWarn("Here0");
     logWarn("\tSending to " + this->broadcast_socket.address().getIp() + ":" +
             std::to_string(this->broadcast_socket.address().getPort()));
-    logWarn("Here1");
     auto msg_str = message.dump();
-    logWarn("Here10");
     this->broadcast_socket.send(msg_str);
-    logWarn("Here2");
-    logInfo("Published " + message.dump(2) + " to " + this->fmt());
-    logWarn("Here3");
+    //logInfo("Published " + message.dump(2) + " to " + this->fmt());
 }
 
 void Client::sendResponse(const Response& response) {

@@ -1,14 +1,22 @@
 #include "state_controller.hpp"
 #include "../common.hpp"
+#include "../net/exceptions.hpp"
 #include "channel.hpp"
 #include "client.hpp"
 #include "event.hpp"
 #include "exceptions.hpp"
 #include "types.hpp"
+#include <algorithm>
 #include <functional>
+#include <iterator>
+#include <memory>
+#include <mutex>
+#include <set>
+#include <shared_mutex>
 #include <sys/poll.h>
+#include <tuple>
 #include <unordered_map>
-#include "../net/exceptions.hpp"
+#include <utility>
 
 /**
    Wait for the next event on either the server or one of the clients.
@@ -17,8 +25,7 @@
    - **NetworkException** if `poll` fails.
  **/
 Event StateController::nextEvent() {
-    int n_of_events =
-        poll(this->poll_fds.data(), this->poll_fds.size(), -1);
+    int n_of_events = poll(this->poll_fds.data(), this->poll_fds.size(), -1);
 
     if (n_of_events == -1) {
         throw NetworkException("Poll");
@@ -56,7 +63,8 @@ void StateController::registerPollFdFor(FileDescriptor fd) noexcept {
     this->poll_fds.push_back(pfd);
 }
 
-auto StateController::getClients() noexcept -> std::unordered_map<ClientId, Client>& {
+auto StateController::getClients() noexcept
+    -> std::unordered_map<ClientId, Client> & {
     return std::ref(this->clients);
 }
 
@@ -68,9 +76,7 @@ void StateController::addClient(Client client) noexcept {
     this->clients.insert({client.getFd(), client});
 }
 
-void StateController::removeClientByFd(int fd) noexcept {
-    auto client = this->clientByFd(fd);
-
+void StateController::removeClientByFd(Client &client) noexcept {
     client.killConnection();
 
     // Remove all subscriptions of that client
@@ -82,7 +88,8 @@ void StateController::removeClientByFd(int fd) noexcept {
     this->clients.erase(client.getFd());
 
     // Erase the client's pollfd
-    std::erase_if(this->poll_fds, [fd](pollfd &pfd) { return pfd.fd == fd; });
+    std::erase_if(this->poll_fds,
+                  [&](pollfd &pfd) { return pfd.fd == client.getFd(); });
 }
 
 /**
@@ -100,6 +107,35 @@ auto StateController::clientByFd(int fd) -> Client & {
     return std::ref(found->second);
 }
 
+// void StateController::setListenForWrite(ClientId id, bool status) noexcept {
+//     short new_flags = (status ? POLLOUT : 0) | StateController::POLL_ERROR |
+//                      StateController::POLL_INPUT;
+//     pollfd new_pfd = {id, new_flags, 0};
+
+//     auto it = std::find_if(this->poll_fds.begin(), this->poll_fds.end(),
+//                  [&](pollfd pfd) { return pfd.fd == id; });
+//     int idx = std::distance(this->poll_fds.begin(), it);
+
+//     this->poll_fds[idx] = new_pfd;
+// }
+
+// Lock a client, disable listening for input
+// std::lock_guard<std::mutex> StateController::lockClient(ClientId id) {
+//     return std::lock_guard<std::mutex>(*this->clients.at(id).lock);
+// }
+
+void StateController::clearEventsByFd(FileDescriptor fd) {
+    auto it = std::find_if(poll_fds.begin(), poll_fds.end(),
+                           [&](pollfd pfd) { return pfd.fd == fd; });
+    it->revents = 0;
+}
+void StateController::setPollingByFd(FileDescriptor fd, bool flag) {
+    auto it = std::find_if(poll_fds.begin(), poll_fds.end(),
+                           [&](pollfd pfd) { return pfd.fd == fd; });
+    it->events =
+        flag ? StateController::POLL_INPUT | StateController::POLL_ERROR : 0;
+}
+
 /**
    Throws:
    - **ClientException** if no Client with passed id exists
@@ -107,7 +143,6 @@ auto StateController::clientByFd(int fd) -> Client & {
  **/
 void StateController::addSubscription(ClientId client_id,
                                       ChannelName channel_name) {
-    auto client = this->clientByFd(client_id);
     auto channel_id = this->channelIdByName(channel_name);
 
     this->channels.at(channel_id).addSubscriber(client_id);
@@ -121,14 +156,13 @@ void StateController::addSubscription(ClientId client_id,
  **/
 void StateController::removeSubscription(ClientId client_id,
                                          ChannelName channel_name) {
-    auto client = this->clientByFd(client_id);
     auto channel_id = this->channelIdByName(channel_name);
-
     this->channels[channel_id].removeSubscriber(client_id);
     this->clients[client_id].unsubscribeFrom(channel_id);
 }
 
-auto StateController::getChannels() noexcept -> std::unordered_map<ChannelId, Channel>& {
+auto StateController::getChannels() noexcept
+    -> std::unordered_map<ChannelId, Channel> & {
     return std::ref(this->channels);
 }
 
