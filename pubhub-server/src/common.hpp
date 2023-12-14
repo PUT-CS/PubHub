@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdio>
 #ifndef COMMON
 #define COMMON
 
@@ -50,8 +51,9 @@ void logMessage(LogLevel level, const T& message) {
     char timeStr[20];
     std::strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", timeInfo);
 
-    // Log the message with the timestamp and colored log level
-    std::cerr<< colorCode << "[" << timeStr << "]" << "[" << levelStr << "]" << ": " << message << resetColor << std::endl;
+    auto output = colorCode + "[" + std::string(timeStr) + "][" + levelStr + "]: " +  message + resetColor + "\n";
+
+    std::cerr<< output;
 }
 
 template <typename T>

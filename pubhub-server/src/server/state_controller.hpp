@@ -36,7 +36,7 @@ class StateController {
     auto getClients() noexcept -> std::unordered_map<ClientId, Client> &;
     void addClient(Client) noexcept;
     void removeClientByFd(Client&) noexcept;
-    auto clientByFd(FileDescriptor) -> Client &;
+    auto clientByFd(FileDescriptor) noexcept -> Client &;
     void clearEventsByFd(FileDescriptor);
     void setPollingByFd(FileDescriptor, bool);
 

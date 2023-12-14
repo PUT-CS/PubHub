@@ -8,8 +8,11 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <exception>
 #include <mutex>
 #include <string>
+#include <thread>
+#include <unistd.h>
 
 /// Create the Hub. Initializes the server socket and the first pollfd.
 Hub::Hub(SocketAddress addr) {
@@ -22,14 +25,17 @@ Hub::Hub(SocketAddress addr) {
 
 void Hub::run() {
     logInfo("Starting the PubHub Server...");
+    Event event;
     while (true) {
-        auto event = state_controller.nextEvent();
+        logInfo("Waiting for the next event");
+        while ((event = state_controller.nextEvent()).kind == EventKind::Nil) {}
         this->handleEvent(event);
         logInfo("\n\nNEXT\n");
     }
 }
 
 void Hub::handleEvent(Event event) {
+    // purely a Server event
     if (event.kind == EventKind::ConnectionRequest) {
         this->handleNewConnection();
         return;
@@ -45,96 +51,78 @@ void Hub::handleEvent(Event event) {
 
     switch (event.kind) {
     case EventKind::Input:
-        this->handleInput(event.fd);
+        std::thread([&]() {
+            this->handleInput(event.fd);
+            logInfo("Enabling polling");
+            state_controller.setPollingByFd(event.fd, true);
+        }).detach();
         break;
     case EventKind::Disconnect:
         this->handleDisconnect(event.fd);
         break;
     default:
         logError("Unreachable branch reached");
+        std::exit(1);
         break;
     }
-
-    logInfo("Enabling polling");
-    state_controller.setPollingByFd(event.fd, true);
 }
 
 void Hub::handleInput(FileDescriptor fd) {
-    // Look for a client with an event
-    // Client sent data and it's ready to read
-    // TODO: Catch
-    auto &client = state_controller.clientByFd(fd);
-
-    nlohmann::json request;
-    // fix this
+    Client &client = state_controller.clientByFd(fd);
+    Response res;
+    
     try {
-        request = client.receiveMessage();
-    } catch (const NetworkException& e) {
-        logError(e.what());
-        auto response = Response::NetworkError(e.what());
-        client.sendResponse(response);
-    } catch (const nlohmann::json::parse_error& e) {
-        logError(e.what());
-        auto response = Response::InternalError();
-        client.sendResponse(response);
-    }
+        nlohmann::json request = client.receiveMessage();
 
-    std::string target_channel;
-    // fix this
-    try {
-        target_channel = request.at("channel");
-    } catch (const std::exception &e) {
-        logError(e.what());
-        return;
-    }
+        auto msg_str = request.dump();
+        logInfo("Received from " + std::to_string(fd) + ": " + msg_str);
 
-    auto kind_str = request.at("kind");
-    auto kind = Request::fromString(kind_str);
-    HandlerFn handler{};
+        auto target_channel = request.at("channel");
 
-    using Request::RequestKind;
-    switch (kind) {
-    case RequestKind::Subscribe:
-        handler = subscribeHandler(client, target_channel);
-        break;
-    case RequestKind::Unsubscribe:
-        handler = unsubscribeHandler(client, target_channel);
-        break;
-    case RequestKind::CreateChannel:
-        handler = createChannelHandler(target_channel);
-        break;
-    case RequestKind::DeleteChannel:
-        handler = deleteChannelHandler(target_channel);
-        break;
-    case RequestKind::Publish:
-        // check if message has content, handle error
-        handler = publishHandler(target_channel, request.at("content"));
-        break;
-    case RequestKind::Ask:
-        handler = askHandler();
-        break;
-    default:
-        logWarn("Reached default branch while handling input");
-        break;
-    }
+        auto kind_str = request.at("kind");
+        auto kind = Request::fromString(kind_str);
+        HandlerFn handler{};
 
-    auto msg_str = request.dump();
-    logInfo("Received from " + std::to_string(fd) + ": " + msg_str);
-
-    Response res{};
-    try {
+        using Request::RequestKind;
+        switch (kind) {
+        case RequestKind::Subscribe:
+            handler = subscribeHandler(client, target_channel);
+            break;
+        case RequestKind::Unsubscribe:
+            handler = unsubscribeHandler(client, target_channel);
+            break;
+        case RequestKind::CreateChannel:
+            handler = createChannelHandler(target_channel);
+            break;
+        case RequestKind::DeleteChannel:
+            handler = deleteChannelHandler(target_channel);
+            break;
+        case RequestKind::Publish:
+            // check if message has content, handle error
+            handler = publishHandler(target_channel, request.at("content"));
+            break;
+        case RequestKind::Ask:
+            handler = askHandler();
+            break;
+        default:
+            logWarn("Reached default branch while handling input");
+            break;
+        }
         res = handler();
-    } catch (const InternalErrorException &e) {
-        res = Response::InternalError();
-        logError("\tINTERNAL ERROR: " + std::string(e.what()));
-    } catch (const InvalidInputException &e) {
+    } catch (const InvalidInputException& e) {
+        logError("Invalid Input: " + std::string(e.what()));
         res = Response::InvalidRequest(e.what());
-        logError("\tINVALID INPUT: " + std::string(e.what()));
-    } catch (const std::exception &e) {
+    } catch (...) {
+        logError("Internal Error");
         res = Response::InternalError();
-        logError("\tOTHER ERROR: " + std::string(e.what()));
     }
-    client.sendResponse(res);
+    
+    try {
+        client.sendResponse(res);
+    } catch (...) {
+        logError("Failed to send response");
+        state_controller.removeClientByFd(client);
+    }
 }
 
 Hub::HandlerFn Hub::subscribeHandler(const Client &client,

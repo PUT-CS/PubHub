@@ -1,12 +1,12 @@
 #pragma once
+#ifndef HUB_H
+#define HUB_H
+
 #include "client.hpp"
 #include "request.hpp"
 #include "state_controller.hpp"
 #include "types.hpp"
 #include <functional>
-#ifndef HUB_H
-#define HUB_H
-
 #include "../common.hpp"
 #include "channel.hpp"
 #include "event.hpp"

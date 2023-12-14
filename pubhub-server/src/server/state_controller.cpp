@@ -25,7 +25,7 @@
    - **NetworkException** if `poll` fails.
  **/
 Event StateController::nextEvent() {
-    int n_of_events = poll(this->poll_fds.data(), this->poll_fds.size(), -1);
+    int n_of_events = poll(this->poll_fds.data(), this->poll_fds.size(), 5);
 
     if (n_of_events == -1) {
         throw NetworkException("Poll");
@@ -92,19 +92,9 @@ void StateController::removeClientByFd(Client &client) noexcept {
                   [&](pollfd &pfd) { return pfd.fd == client.getFd(); });
 }
 
-/**
-   Throws:
-    - **ClientNotFoundException** if no Client with that Id exists.
- **/
-auto StateController::clientByFd(int fd) -> Client & {
-    auto found = this->clients.find(fd);
-
-    if (found == this->clients.end()) {
-        throw ClientNotFoundException("No Client with ID = " +
-                                      std::to_string(fd));
-    }
-
-    return std::ref(found->second);
+/// Assumes the client exists
+auto StateController::clientByFd(int fd) noexcept -> Client &{
+    return std::ref(this->clients.find(fd)->second);
 }
 
 // void StateController::setListenForWrite(ClientId id, bool status) noexcept {
