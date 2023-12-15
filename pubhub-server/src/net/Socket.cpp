@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <memory>
 #include <sys/socket.h>
+#include <thread>
 #include <unistd.h>
 
 /**
@@ -73,14 +74,13 @@ void Socket::send(std::string message) {
     }
 
     constexpr int CHUNK_SIZE = 1024 * 128; /// 128kB
-    logWarn("Sending");
     int message_bytes_sent = 0;
     while ((uint32_t)message_bytes_sent < msg_size) {
         auto to_send = std::clamp((int)msg_size - message_bytes_sent, 0, CHUNK_SIZE);
         auto data_ptr = message.c_str() + message_bytes_sent;
         
         message_bytes_sent += ::send(this->fd, data_ptr, to_send, 0);
-        logWarn("Sent " + std::to_string(message_bytes_sent));
+        INFO("Sent " + std::to_string(message_bytes_sent));
         if (message_bytes_sent == -1) {
             throw NetworkException("Send");
         }

@@ -12,7 +12,6 @@
 #include <memory>
 #include <mutex>
 #include <set>
-#include <shared_mutex>
 #include <sys/poll.h>
 #include <tuple>
 #include <unordered_map>
@@ -61,6 +60,7 @@ void StateController::registerPollFdFor(FileDescriptor fd) noexcept {
     pollfd pfd = {fd, StateController::POLL_INPUT | StateController::POLL_ERROR,
                   0};
     this->poll_fds.push_back(pfd);
+        
 }
 
 auto StateController::getClients() noexcept
@@ -243,7 +243,7 @@ void StateController::debugLogPollFds() const noexcept {
 
 void StateController::debugLogChannels() const noexcept {
     if (this->channels.empty()) {
-        logDebug("No channels");
+        DEBUG("No channels");
         return;
     }
     print("Current Channels:");

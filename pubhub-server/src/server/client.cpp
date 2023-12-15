@@ -32,7 +32,7 @@ void Client::initializeBroadcast(uint16_t to_port) {
     this->broadcast_socket = ClientSocket(broadcast_addr);
     
     this->broadcast_socket.connect();
-    logInfo("Connected broadcast to " + broadcast_addr.fmt());
+    INFO("Connected broadcast to " + broadcast_addr.fmt());
 }
 
 void Client::subscribeTo(ChannelId id) noexcept { subscriptions.insert(id); }
@@ -65,16 +65,16 @@ nlohmann::json Client::receiveMessage() {
 }
 
 void Client::publishMessage(nlohmann::json message) {
-    logWarn("\tSending to " + this->broadcast_socket.address().getIp() + ":" +
+    WARN("\tSending to " + this->broadcast_socket.address().getIp() + ":" +
             std::to_string(this->broadcast_socket.address().getPort()));
     auto msg_str = message.dump();
     this->broadcast_socket.send(msg_str);
-    //logInfo("Published " + message.dump(2) + " to " + this->fmt());
+    //INFO("Published " + message.dump(2) + " to " + this->fmt());
 }
 
 void Client::sendResponse(const Response& response) {
     auto res_str = response.toJson().dump();
-    logInfo("Responding with " + res_str);
+    INFO("Responding with " + res_str);
     this->socket.send(res_str);
 }
 
