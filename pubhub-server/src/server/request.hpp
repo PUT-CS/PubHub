@@ -4,15 +4,7 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
-// enum HubError {
-//     NoSuchChannel,
-//     ChannelAlreadyExists,
-//     NotSubscribed,
-//     AlreadySubscribed,
-//     InternalError,
-// };
-
-namespace Request {
+namespace RequestKind {
 enum class RequestKind {
     Subscribe,
     Unsubscribe,
@@ -21,15 +13,17 @@ enum class RequestKind {
     Publish,
     Ask
 };
+
 inline RequestKind fromString(std::string s) {
     static const std::map<std::string, RequestKind> strMap = {
         {"Subscribe", RequestKind::Subscribe},
         {"Unsubscribe", RequestKind::Unsubscribe},
         {"CreateChannel", RequestKind::CreateChannel},
         {"DeleteChannel", RequestKind::DeleteChannel},
-        {"Publish", RequestKind::Publish}};
+        {"Publish", RequestKind::Publish}        {"Ask", RequestKind::Ask}};
     return strMap.at(s);
 }
-} // namespace Request
+} // namespace RequestKind
+
 
 #endif

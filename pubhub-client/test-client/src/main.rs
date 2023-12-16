@@ -6,8 +6,6 @@ use std::net::Ipv4Addr;
 type Result<T> = std::result::Result<T, anyhow::Error>;
 
 fn main() -> Result<()> {
-    let addr = (Ipv4Addr::LOCALHOST, 8080);
-    let conn = PubHubConnection::new(addr)?;
     //const SIZE: usize = 1_000_000;
     const SIZE: usize = 1_000;
     let huge_data: Vec<u8> = vec![rand::thread_rng().gen(); SIZE];
@@ -24,9 +22,9 @@ fn main() -> Result<()> {
             content: json!({
                 "a" : 1,
                 "b" : "bee",
-                "c" : [127,0,0,1],
-                "huuuge": huge_data
-            })
+                //"c" : [127,0,0,1],
+                //"huuuge": huge_data
+            }),
         },
         Request::Publish {
             channel: "testchannel2".into(),
@@ -36,30 +34,31 @@ fn main() -> Result<()> {
         Request::Subscribe("testchannel5".into()),
         Request::Unsubscribe("testchannel1".into()),
         Request::DeleteChannel("testchannel1".into()),
-        //Request::Ask,
-
-        // nonexistent channel
+        Request::Ask,
+        // // nonexistent channel
         Request::Publish {
             channel: "null".into(),
-            content: "Hello".into()
+            content: "Hello".into(),
         },
         Request::Subscribe("null".into()),
         Request::DeleteChannel("null".into()),
     ];
 
-    let (mut request_sender, mut listener) = conn.into_inner();
+    let addr = (Ipv4Addr::LOCALHOST, 8080);
+    let (mut request_sender, mut listener) = PubHubConnection::new(addr)?.into_inner();
 
     let tid = std::thread::spawn(move || {
         println!("\nListening...\n");
         loop {
             let msg = listener.next_message().unwrap();
-            eprintln!("Received a message");
+            eprintln!("Received a message: {}", msg.to_string());
         }
     });
-    
+
     let responses = requests.iter().map(|r| request_sender.execute(&r));
+
     for (req, res) in requests.iter().zip(responses) {
-        println!("{:<70}:::{} -> {res:->30?}", 1, req.to_json().to_string().as_bytes().len());
+        println!("{:<70} -> {res:->30?}", req.to_json().to_string());
     }
 
     tid.join().unwrap();

@@ -25,12 +25,12 @@ class Hub {
     void handleDisconnect(FileDescriptor fd) noexcept;
     void handleNewConnection() noexcept;
 
-    HandlerFn subscribeHandler(const Client& client, const ChannelName& target);
-    HandlerFn unsubscribeHandler(const Client& client, const ChannelName& target);
-    HandlerFn createChannelHandler(const ChannelName& target);
-    HandlerFn deleteChannelHandler(const ChannelName& target);
-    HandlerFn publishHandler(const ChannelName& target, const nlohmann::json& content);
-    HandlerFn askHandler();
+    Response handleSubscribe(const Client& client, const ChannelName& target);
+    Response handleUnsubscribe(const Client& client, const ChannelName& target);
+    Response handleCreateChannel(const ChannelName& target);
+    Response handleDeleteChannel(const ChannelName& target);
+    Response handlePublish(const ChannelName& target, const nlohmann::json& content);
+    Response handleAsk();
     
     Client accept();
 

@@ -4,7 +4,7 @@ use crate::error::ConnectionError;
 
 #[derive(Debug, Clone)]
 pub enum Response {
-    Ok { content: String },
+    Ok { content: Option<String> },
     Err { why: String },
 }
 
@@ -22,7 +22,15 @@ impl TryFrom<serde_json::Value> for Response {
         };
 
         match kind.as_str() {
-            "Ok" => Ok(Response::Ok { content: "".into() }),
+            "Ok" => match value.get("info") {
+                Some(Value::String(s)) => {
+                    Ok(Response::Ok { content: Some(s.to_owned()) })
+                },
+                None => {
+                    Ok(Response::Ok { content: None })
+                },
+                _ => Err(ConnectionError::new("Server sent an Ok response with an invalid content").into())
+            }
             "Error" => match value.get("info") {
                 Some(reason) => Ok(Response::Err {
                     why: reason.to_string(),

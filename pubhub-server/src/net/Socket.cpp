@@ -80,7 +80,6 @@ void Socket::send(std::string message) {
         auto data_ptr = message.c_str() + message_bytes_sent;
         
         message_bytes_sent += ::send(this->fd, data_ptr, to_send, 0);
-        INFO("Sent " + std::to_string(message_bytes_sent));
         if (message_bytes_sent == -1) {
             throw NetworkException("Send");
         }
