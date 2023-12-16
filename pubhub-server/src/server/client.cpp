@@ -1,17 +1,7 @@
 #include "client.hpp"
 #include "../common.hpp"
-#include <arpa/inet.h>
-#include <cstdint>
-#include <memory>
-#include <mutex>
-#include <netinet/in.h>
-#include <optional>
-#include <string>
-#include <unistd.h>
 
-Client::Client(ClientSocket socket) : socket(socket) {
-    this->lock = new std::mutex();
-}
+Client::Client(ClientSocket socket) : socket(socket) {}
 
 FileDescriptor Client::getFd() const noexcept { return this->socket.fd; }
 
