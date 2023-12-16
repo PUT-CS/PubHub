@@ -8,7 +8,7 @@
 #include <optional>
 #include "../net/Socket.hpp"
 #include "request.hpp"
-#include "nlohmann/json.hpp"
+#include "../json.hpp"
 #include "response.hpp"
 #include <set>
 
