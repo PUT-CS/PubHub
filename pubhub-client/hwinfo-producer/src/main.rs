@@ -1,20 +1,28 @@
 use std::net::Ipv4Addr;
 
-use pubhub_rs::{PubHubConnection, request::Request};
-use serde_json::json;
+use ::std::time::Duration;
+use pubhub_rs::{request::Request, PubHubConnection};
+use serde_json::{json, Value};
 use sysinfo::{ComponentExt, NetworkExt, System, SystemExt};
-use::std::time::Duration;
 
 fn main() {
     let mut connection = PubHubConnection::new((Ipv4Addr::LOCALHOST, 8080)).unwrap();
     let create_request = Request::CreateChannel("hwinfo".to_string());
-    let _ = connection.execute(&create_request).expect("Unable to create channel");
-    
+    let _ = connection
+        .execute(&create_request)
+        .expect("Unable to create channel");
+
     loop {
-	let message = get_system_info();
-	std::thread::sleep(Duration::from_secs(1));
-	let publish_request = Request::Publish { channel: "hwinfo".to_string(), content: message };
-	let _ = connection.execute(&publish_request).expect("Unable to publish message");
+        let message = get_system_info();
+        std::thread::sleep(Duration::from_secs(1));
+        let publish_request = Request::Publish {
+            channel: "hwinfo".to_string(),
+            content: message,
+        };
+        println!("Publishing: {publish_request:#?}");
+        let _ = connection
+            .execute(&publish_request)
+            .expect("Unable to publish message");
     }
 }
 
@@ -24,31 +32,39 @@ fn get_system_info() -> serde_json::Value {
     // First we update all information of our `System` struct.
     sys.refresh_all();
 
-    let mut networks = String::new();
+    let mut network_map = serde_json::Map::new();
     // Network interfaces name, data received and data transmitted:
     for (interface_name, data) in sys.networks() {
-	networks += &(interface_name.to_owned() + " " + &data.received().to_string() + " " + &data.transmitted().to_string());
+        network_map.insert(
+            interface_name.to_string(),
+            json!({
+                "received" : data.received().to_string(),
+                "transmitted" : data.transmitted().to_string()
+            }),
+        );
     }
-    
-    let mut components = String::new();
-    // Components temperature:
-    for component in sys.components() {
-        components += &(component.label().to_owned() + " " + &component.temperature().to_string() + " ");
-    }
+    let networks = Value::from(network_map);
 
-    let mut system = String::new();
+    let mut component_map = serde_json::Map::new();
+    for component in sys.components() {
+        component_map.insert(
+            component.label().to_string(),
+            serde_json::Value::String(component.temperature().to_string()),
+        );
+    }
+    let components = Value::from(component_map);
+
     // RAM and swap information:
-    system += &("total memory ".to_owned()
-        + &sys.total_memory().to_string()
-        + " used memory  "
-        + &sys.used_memory().to_string()
-        + " total swap "
-        + &sys.total_swap().to_string()
-        + " used swap "
-        + &sys.used_swap().to_string());
+    let mem_info = json!({
+        "totalMemory" : sys.total_memory().to_string(),
+        "usedMemory" : sys.used_memory().to_string(),
+        "totalSwap" : sys.total_swap().to_string(),
+        "usedSwap" : sys.used_swap().to_string(),
+    });
+
     json!({
-	"networks": networks.trim(),
-	"components": components.trim(),
-	"system": system.trim()
+        "networks": networks,
+        "components": components,
+        "memory": mem_info
     })
 }

@@ -10,9 +10,7 @@
 #include <iostream>
 #include <exception>
 
-
 #define __LOG_LEVEL__ LogLevel::DEBUG
-
 #define __LOG_HEADER__                                                         \
     "[" + std::string(__FILE_NAME__) + ":" + std::to_string(__LINE__) +        \
         " in " + std::to_string(thread_id()) + +"]: "
@@ -22,24 +20,14 @@
 #define WARN(msg) __LOG_LEVEL__ <= LogLevel::WARN? __logWarn(__LOG_HEADER__ + msg) : (void)0
 #define ERROR(msg) __LOG_LEVEL__ <= LogLevel::ERROR? __logError(__LOG_HEADER__ + msg) : (void)0
 
+// Works well for a small number of threads, debug only and should not be trusted as accurate
 inline int thread_id() {
-    std::ostringstream oss;
-    oss << std::this_thread::get_id() << std::endl;
-    //printf("%s", oss.str().c_str());
-    return (unsigned)(5<<std::hash<std::thread::id>()(std::this_thread::get_id()))/100;
+    return (unsigned)std::hash<std::thread::id>()(std::this_thread::get_id()) % 1000;
 }
 
 template <typename T> void print(T obj) { std::cout << obj << std::endl; }
 
-template <typename T> void print_n_from(T arg[], size_t n) {
-    for (size_t i = 0; i < n; i++) {
-        std::cout << arg[i];
-    }
-
-    std::cout << "|STOP|" << std::endl;
-}
-
-enum LogLevel { NONE, DEBUG, INFO, WARN, ERROR };
+enum LogLevel {DEBUG, INFO, WARN, ERROR, NONE };
 
 // Define logMessage at the beginning
 template <typename T>

@@ -20,7 +20,8 @@ inline RequestKind fromString(std::string s) {
         {"Unsubscribe", RequestKind::Unsubscribe},
         {"CreateChannel", RequestKind::CreateChannel},
         {"DeleteChannel", RequestKind::DeleteChannel},
-        {"Publish", RequestKind::Publish}        {"Ask", RequestKind::Ask}};
+        {"Publish", RequestKind::Publish},
+        {"Ask", RequestKind::Ask}};
     return strMap.at(s);
 }
 } // namespace RequestKind

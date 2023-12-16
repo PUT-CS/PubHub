@@ -7,5 +7,6 @@ members = [
     "hwinfo-producer",
     "randint-producer",
     "conway-producer",
-    "test-client"
+    "test-client",
+    "test-listener"
 ]

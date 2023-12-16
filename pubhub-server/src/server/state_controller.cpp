@@ -220,23 +220,23 @@ bool StateController::channelExists(const ChannelName &name) const noexcept {
 
 void StateController::debugLogClients() const noexcept {
     if (this->clients.empty()) {
-        print("No Clients");
+        DEBUG("No Clients");
         return;
     }
-    print("Current Clients:");
+    DEBUG("Current Clients:");
     for (const auto &client : this->clients) {
-        print(client.second.fmt());
+        DEBUG(client.second.fmt());
     }
 }
 
 void StateController::debugLogPollFds() const noexcept {
     if (this->poll_fds.empty()) {
-        print("No pollfds");
+        DEBUG("No pollfds");
         return;
     }
-    print("Current pollfds");
+    DEBUG("Current pollfds");
     for (const pollfd &fd : this->poll_fds) {
-        print("POLLFD FD: " + std::to_string(fd.fd) +
+        DEBUG("POLLFD FD: " + std::to_string(fd.fd) +
               ", EVENTS: " + std::to_string(fd.events));
     }
 }
@@ -246,9 +246,9 @@ void StateController::debugLogChannels() const noexcept {
         DEBUG("No channels");
         return;
     }
-    print("Current Channels:");
+    DEBUG("Current Channels:");
     for (const auto &[id, channel] : this->channels) {
-        print("ID: " + std::to_string(id) + ", Name: " + channel.name +
+        DEBUG("ID: " + std::to_string(id) + ", Name: " + channel.name +
               ", Subscribers: " + std::to_string(channel.subscribers.size()));
     }
 }
