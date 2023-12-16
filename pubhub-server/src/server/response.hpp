@@ -1,6 +1,6 @@
 #include <optional>
 #include <string>
-#include "../json.hpp"
+#include "nlohmann/json.hpp"
 
 class Response {
     private:

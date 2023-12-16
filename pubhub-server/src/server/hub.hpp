@@ -5,12 +5,9 @@
 #include "client.hpp"
 #include "request.hpp"
 #include "state_controller.hpp"
-#include "types.hpp"
-#include <functional>
 #include "../common.hpp"
 #include "channel.hpp"
 #include "event.hpp"
-#include "sys/poll.h"
 
 class Hub {
   private:

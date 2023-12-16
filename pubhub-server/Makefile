@@ -10,8 +10,9 @@ NLOHMANN_JSON_PCH = $(NLOHMANN_JSON).pch
 
 # Compiler and compiler flags
 CC = clang++
-CC_COMMON_FLAGS = -Wall -Wextra -std=c++20 -pipe
+CC_COMMON_FLAGS = -Wall -Wextra -Wpedantic -Weffc++ -Werror -std=c++20 -pipe -D_FORTIFY_SOURCE=2 -D_GLIBCXX_ASSERTIONS
 CC_CODE_FLAGS =  $(CC_COMMON_FLAGS) -include-pch $(NLOHMANN_JSON_PCH) -ftime-trace
+#CC_CODE_FLAGS =  $(CC_COMMON_FLAGS) -ftime-trace
 CC_JSON_FLAGS = -o $(NLOHMANN_JSON_PCH) $(CC_COMMON_FLAGS)
 
 # Source files found in subdirectories
@@ -23,10 +24,9 @@ OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
 # Executable name
 EXECUTABLE = $(BIN_DIR)/pubhub
 
-all: json $(EXECUTABLE)
+all: $(NLOHMANN_JSON_PCH) $(EXECUTABLE)
 
-#$(NLOHMANN_JSON_PCH):
-json:
+$(NLOHMANN_JSON_PCH):
 	$(CC) $(CC_JSON_FLAGS) $(NLOHMANN_JSON)
 
 # Rule to compile source files into object files
