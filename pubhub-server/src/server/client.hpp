@@ -3,6 +3,7 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
+#include <mutex>
 #include <cstdint>
 #include <optional>
 #include "../net/Socket.hpp"
@@ -21,9 +22,11 @@ class Client {
     ClientSocket broadcast_socket{};
     std::set<ChannelId> subscriptions = {};
 
+    std::mutex* lock;
+
     Client();
     Client(ClientSocket);
-
+    
     void initializeBroadcast(uint16_t);
     void subscribeTo(ChannelId) noexcept;
     void unsubscribeFrom(ChannelId) noexcept;
@@ -32,6 +35,7 @@ class Client {
     nlohmann::json receiveMessage();
     void sendResponse(const Response&);
     void publishMessage(nlohmann::json);
+    void setListenForWrite(bool);
     std::string fmt() const noexcept;
 
     ~Client();

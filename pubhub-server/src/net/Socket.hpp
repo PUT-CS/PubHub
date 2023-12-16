@@ -1,4 +1,6 @@
 #pragma once
+#include <cstddef>
+#include <deque>
 #ifndef SOCKET_H
 #define SOCKET_H
 
@@ -8,7 +10,6 @@
 class Socket {
   protected:
     SocketAddress addr;
-    size_t buffer_size;
     bool created = false;
 
   public:
@@ -25,13 +26,13 @@ class Socket {
     ~Socket(){};
 };
 
-
 class ClientSocket : public Socket {
   public:
     ClientSocket();
     ClientSocket(SocketAddress);
     ClientSocket(FileDescriptor, SocketAddress);
     void connect();
+    std::deque<std::byte> buffer;
     
     std::string fmt() const noexcept;
     
@@ -44,9 +45,10 @@ class ServerSocket : public Socket {
     ServerSocket(SocketAddress);
     void bind();
     void listen();
+    
     ClientSocket accept();
+
     ~ServerSocket(){};
 };
-
 
 #endif

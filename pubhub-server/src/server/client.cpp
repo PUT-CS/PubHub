@@ -2,12 +2,16 @@
 #include "../common.hpp"
 #include <arpa/inet.h>
 #include <cstdint>
+#include <memory>
+#include <mutex>
 #include <netinet/in.h>
 #include <optional>
 #include <string>
 #include <unistd.h>
 
-Client::Client(ClientSocket socket) : socket(socket) {}
+Client::Client(ClientSocket socket) : socket(socket) {
+    this->lock = new std::mutex();
+}
 
 FileDescriptor Client::getFd() const noexcept { return this->socket.fd; }
 
@@ -28,7 +32,7 @@ void Client::initializeBroadcast(uint16_t to_port) {
     this->broadcast_socket = ClientSocket(broadcast_addr);
     
     this->broadcast_socket.connect();
-    logInfo("Connected broadcast to " + broadcast_addr.fmt());
+    INFO("Connected broadcast to " + broadcast_addr.fmt());
 }
 
 void Client::subscribeTo(ChannelId id) noexcept { subscriptions.insert(id); }
@@ -61,21 +65,16 @@ nlohmann::json Client::receiveMessage() {
 }
 
 void Client::publishMessage(nlohmann::json message) {
-    logWarn("Here0");
-    logWarn("\tSending to " + this->broadcast_socket.address().getIp() + ":" +
+    WARN("\tSending to " + this->broadcast_socket.address().getIp() + ":" +
             std::to_string(this->broadcast_socket.address().getPort()));
-    logWarn("Here1");
     auto msg_str = message.dump();
-    logWarn("Here10");
     this->broadcast_socket.send(msg_str);
-    logWarn("Here2");
-    logInfo("Published " + message.dump(2) + " to " + this->fmt());
-    logWarn("Here3");
+    //INFO("Published " + message.dump(2) + " to " + this->fmt());
 }
 
 void Client::sendResponse(const Response& response) {
     auto res_str = response.toJson().dump();
-    logInfo("Responding with " + res_str);
+    INFO("Responding with " + res_str);
     this->socket.send(res_str);
 }
 

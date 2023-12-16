@@ -5,9 +5,14 @@
 #include "client.hpp"
 #include "event.hpp"
 #include "types.hpp"
+#include "../rustex.h"
+#include <mutex>
+#include <shared_mutex>
 #include <sys/poll.h>
 #include <unordered_map>
 #include <vector>
+
+using namespace rustex;
 
 class StateController {
   private:
@@ -30,8 +35,13 @@ class StateController {
 
     auto getClients() noexcept -> std::unordered_map<ClientId, Client> &;
     void addClient(Client) noexcept;
-    void removeClientByFd(FileDescriptor) noexcept;
-    auto clientByFd(FileDescriptor) -> Client &;
+    void removeClientByFd(Client&) noexcept;
+    auto clientByFd(FileDescriptor) noexcept -> Client &;
+    void clearEventsByFd(FileDescriptor);
+    void setPollingByFd(FileDescriptor, bool);
+
+    //void setListenForWrite(ClientId, bool) noexcept;
+    //auto lockClient(ClientId) -> std::lock_guard<std::mutex>;
 
     void addSubscription(ClientId, ChannelName);
     void removeSubscription(ClientId, ChannelName);

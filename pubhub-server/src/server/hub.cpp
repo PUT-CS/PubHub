@@ -2,11 +2,17 @@
 #include "../net/exceptions.hpp"
 #include "channel.hpp"
 #include "client.hpp"
+#include "event.hpp"
 #include "exceptions.hpp"
 #include "types.hpp"
 #include <algorithm>
+#include <cassert>
 #include <cstdlib>
+#include <exception>
+#include <mutex>
 #include <string>
+#include <thread>
+#include <unistd.h>
 
 /// Create the Hub. Initializes the server socket and the first pollfd.
 Hub::Hub(SocketAddress addr) {
@@ -18,111 +24,112 @@ Hub::Hub(SocketAddress addr) {
 }
 
 void Hub::run() {
-    logInfo("Starting the PubHub Server...");
+    INFO("Starting the PubHub Server...");
+    Event event;
     while (true) {
-        auto event = state_controller.nextEvent();
+        INFO("Waiting for the next event...");
+        while ((event = state_controller.nextEvent()).kind == EventKind::Nil) {}
         this->handleEvent(event);
+        //INFO("\n\nNEXT\n");
     }
 }
 
 void Hub::handleEvent(Event event) {
+    // purely a Server event
+    if (event.kind == EventKind::ConnectionRequest) {
+        this->handleNewConnection();
+        return;
+    }
+    
+    // Clear client events, preventing next `poll`s from reporting anything here
+    //INFO("Clearing events...");
+    state_controller.clearEventsByFd(event.fd);
+
+    // Disable polling for this client
+    //INFO("Disabling polling...");
+    state_controller.setPollingByFd(event.fd, false);
+
     switch (event.kind) {
     case EventKind::Input:
-        this->handleInput(event.fd);
+        // using `&` here causes a crash
+        std::thread([=]() {
+            this->handleInput(event.fd);
+            INFO("Enabling polling");
+            state_controller.setPollingByFd(event.fd, true);
+        }).detach();
         break;
     case EventKind::Disconnect:
         this->handleDisconnect(event.fd);
         break;
-    case EventKind::ConnectionRequest:
-        this->handleNewConnection();
-        break;
-    case EventKind::Nil:
-        // Unreachable if nextEvent was called with a negative value
+    default:
+        ERROR("Unreachable branch reached");
+        std::exit(1);
         break;
     }
 }
 
 void Hub::handleInput(FileDescriptor fd) {
-    // Look for a client with an event
-    // Client sent data and it's ready to read
-    // TODO: Catch
-    auto &client = state_controller.clientByFd(fd);
-
-    nlohmann::json request;
+    Client &client = state_controller.clientByFd(fd);
+    Response res;
+    
     try {
-        request = client.receiveMessage();
-    } catch (const NetworkException& e) {
-        logError(e.what());
-        auto response = Response::NetworkError(e.what());
-        client.sendResponse(response);
-    } catch (const nlohmann::json::parse_error& e) {
-        logError(e.what());
-        auto response = Response::InternalError();
-        client.sendResponse(response);
-    }
+        nlohmann::json request = client.receiveMessage();
 
-    std::string target_channel;
-    try {
-        target_channel = request.at("channel");
-    } catch (const std::exception &e) {
-        logError(e.what());
-        return;
-    }
+        auto msg_str = request.dump();
+        INFO("Received from " + std::to_string(fd) + ": " + msg_str);
 
-    auto kind_str = request.at("kind");
-    auto kind = Request::fromString(kind_str);
-    HandlerFn handler{};
+        auto target_channel = request.at("channel");
 
-    using Request::RequestKind;
-    switch (kind) {
-    case RequestKind::Subscribe:
-        handler = subscribeHandler(client, target_channel);
-        break;
-    case RequestKind::Unsubscribe:
-        handler = unsubscribeHandler(client, target_channel);
-        break;
-    case RequestKind::CreateChannel:
-        handler = createChannelHandler(target_channel);
-        break;
-    case RequestKind::DeleteChannel:
-        handler = deleteChannelHandler(target_channel);
-        break;
-    case RequestKind::Publish:
-        // check if message has content, handle error
-        print(request.at("content"));
-        handler = publishHandler(target_channel, request.at("content"));
-        break;
-    case RequestKind::Ask:
-        handler = askHandler();
-        break;
-    default:
-        logWarn("Reached default branch while handling input");
-        break;
-    }
+        auto kind_str = request.at("kind");
+        auto kind = Request::fromString(kind_str);
+        HandlerFn handler{};
 
-    auto msg_str = request.dump();
-    logInfo("Received from " + std::to_string(fd) + ": " + msg_str);
-
-    Response res{};
-    try {
+        using Request::RequestKind;
+        switch (kind) {
+        case RequestKind::Subscribe:
+            handler = subscribeHandler(client, target_channel);
+            break;
+        case RequestKind::Unsubscribe:
+            handler = unsubscribeHandler(client, target_channel);
+            break;
+        case RequestKind::CreateChannel:
+            handler = createChannelHandler(target_channel);
+            break;
+        case RequestKind::DeleteChannel:
+            handler = deleteChannelHandler(target_channel);
+            break;
+        case RequestKind::Publish:
+            // check if message has content, handle error
+            handler = publishHandler(target_channel, request.at("content"));
+            break;
+        case RequestKind::Ask:
+            handler = askHandler();
+            break;
+        default:
+            WARN("Reached default branch while handling input");
+            break;
+        }
         res = handler();
-    } catch (const InternalErrorException &e) {
-        res = Response::InternalError();
-        logError("\tINTERNAL ERROR: " + std::string(e.what()));
-    } catch (const InvalidInputException &e) {
+    } catch (const InvalidInputException& e) {
+        ERROR("Invalid Input: " + std::string(e.what()));
         res = Response::InvalidRequest(e.what());
-        logError("\tINVALID INPUT: " + std::string(e.what()));
-    } catch (const std::exception &e) {
+    } catch (...) {
+        ERROR("Internal Error");
         res = Response::InternalError();
-        logError("\tOTHER ERROR: " + std::string(e.what()));
     }
-    client.sendResponse(res);
+    
+    try {
+        client.sendResponse(res);
+    } catch (...) {
+        ERROR("Failed to send response");
+        state_controller.removeClientByFd(client);
+    }
 }
 
 Hub::HandlerFn Hub::subscribeHandler(const Client &client,
                                      const ChannelName &target) {
     return [=]() {
-        logWarn("\tSubscribe handler");
+        WARN("Subscribe handler");
         state_controller.addSubscription(client.getFd(), target);
         state_controller.debugLogChannels();
         return Response::Ok();
@@ -132,7 +139,7 @@ Hub::HandlerFn Hub::subscribeHandler(const Client &client,
 Hub::HandlerFn Hub::unsubscribeHandler(const Client &client,
                                        const ChannelName &target) {
     return [=]() {
-        logWarn("\tUnsubscribe handler");
+        WARN("Unsubscribe handler");
         state_controller.removeSubscription(client.getFd(), target);
         state_controller.debugLogChannels();
         return Response::Ok();
@@ -141,7 +148,7 @@ Hub::HandlerFn Hub::unsubscribeHandler(const Client &client,
 
 Hub::HandlerFn Hub::createChannelHandler(const ChannelName &target) {
     return [=]() {
-        logWarn("\tAdding channel");
+        WARN("Adding channel");
         state_controller.addChannel(target);
         state_controller.debugLogChannels();
         return Response::Ok();
@@ -150,7 +157,7 @@ Hub::HandlerFn Hub::createChannelHandler(const ChannelName &target) {
 
 Hub::HandlerFn Hub::deleteChannelHandler(const ChannelName &target) {
     return [=]() {
-        logWarn("\tDeleting channel");
+        WARN("Deleting channel");
         state_controller.deleteChannel(target);
         state_controller.debugLogChannels();
         return Response::Ok();
@@ -160,11 +167,10 @@ Hub::HandlerFn Hub::deleteChannelHandler(const ChannelName &target) {
 Hub::HandlerFn Hub::publishHandler(const ChannelName &target,
                                    const nlohmann::json &message) {
     return [=]() {
-        logWarn(message);
-        logWarn("\tPublish handler");
+        WARN("Publish handler");
         auto channel = state_controller.channelById(state_controller.channelIdByName(target));
         for (auto &sub_id : channel.subscribers) {
-            logInfo("\tHandling sub of id: " + std::to_string(sub_id));
+            INFO("Handling sub of id: " + std::to_string(sub_id));
             auto &subscriber = state_controller.clientByFd(sub_id);
             auto msg =
                 nlohmann::json{{"channel", target}, {"content", message}};
@@ -176,7 +182,7 @@ Hub::HandlerFn Hub::publishHandler(const ChannelName &target,
 
 Hub::HandlerFn Hub::askHandler() {
     return [=]() {
-        logWarn("Unfinished handler...");
+        WARN("Unfinished handler...");
         for (auto &i : state_controller.getChannels()) {
             std::cout << i.first << " " + i.second.name << std::endl;
         }
@@ -185,8 +191,9 @@ Hub::HandlerFn Hub::askHandler() {
 }
 
 void Hub::handleDisconnect(FileDescriptor fd) noexcept {
-    state_controller.removeClientByFd(fd);
-    logWarn("Client disconnected: " + std::to_string(fd));
+    auto& client = state_controller.clientByFd(fd);
+    state_controller.removeClientByFd(client);
+    WARN("Client disconnected: " + std::to_string(fd));
 }
 
 void Hub::handleNewConnection() noexcept {
@@ -196,11 +203,11 @@ void Hub::handleNewConnection() noexcept {
     }
     catch (const NetworkException& e) {
         client.killConnection();
-        logError(e.what());
+        ERROR(e.what());
         return;
     }
     state_controller.addClient(client);
-    logInfo("Added Client: " + client.fmt());
+    INFO("Added Client: " + client.fmt());
 }
 
 /**
@@ -217,4 +224,4 @@ Client Hub::accept() {
     return client;
 }
 
-Hub::~Hub() { logWarn("Dropping Hub"); }
+Hub::~Hub() { WARN("Dropping Hub"); }

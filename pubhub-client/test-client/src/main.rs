@@ -7,9 +7,11 @@ type Result<T> = std::result::Result<T, anyhow::Error>;
 
 fn main() -> Result<()> {
     let addr = (Ipv4Addr::LOCALHOST, 8080);
-    let mut conn = PubHubConnection::new(addr)?;
-    const SIZE: usize = 100_000;
+    let conn = PubHubConnection::new(addr)?;
+    //const SIZE: usize = 1_000_000;
+    const SIZE: usize = 1_000;
     let huge_data: Vec<u8> = vec![rand::thread_rng().gen(); SIZE];
+    assert_eq!(huge_data.len(), SIZE);
 
     let requests = &[
         Request::CreateChannel("testchannel1".into()),
@@ -23,7 +25,7 @@ fn main() -> Result<()> {
                 "a" : 1,
                 "b" : "bee",
                 "c" : [127,0,0,1],
-                //"huuuge": huge_data
+                "huuuge": huge_data
             })
         },
         Request::Publish {
@@ -45,24 +47,21 @@ fn main() -> Result<()> {
         Request::DeleteChannel("null".into()),
     ];
 
-    let responses = requests.iter().map(|r| conn.execute(&r));
+    let (mut request_sender, mut listener) = conn.into_inner();
 
-
-    for (req, res) in requests.iter().zip(responses) {
-        println!("{:<70} -> {res:->30?}", req.to_json().to_string());
-    }
+    let tid = std::thread::spawn(move || {
+        println!("\nListening...\n");
+        loop {
+            let msg = listener.next_message().unwrap();
+            eprintln!("Received a message");
+        }
+    });
     
-    let (_x, mut listener) = conn.into_inner();
-
-    println!("\nListening...\n");
-    loop {
-        let msg = listener.next_message().unwrap();
-        eprintln!("{msg}");
+    let responses = requests.iter().map(|r| request_sender.execute(&r));
+    for (req, res) in requests.iter().zip(responses) {
+        println!("{:<70}:::{} -> {res:->30?}", 1, req.to_json().to_string().as_bytes().len());
     }
 
-    //Ok(())
-
-    // loop {
-        
-    // }
+    tid.join().unwrap();
+    Ok(())
 }
