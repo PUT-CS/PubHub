@@ -1,9 +1,9 @@
 #ifndef STATE_CONTROLLER_HPP
 #define STATE_CONTROLLER_HPP
 
-#include "channel.hpp"
-#include "client.hpp"
-#include "event.hpp"
+#include "Channel.hpp"
+#include "Client.hpp"
+#include "Event.hpp"
 #include "types.hpp"
 #include <sys/poll.h>
 #include <unordered_map>
@@ -25,12 +25,12 @@ class StateController {
     static const auto POLL_INPUT = POLLIN;
 
   public:
-    Event nextEvent();
+    auto nextEvent() -> Event;
     void registerPollFdFor(FileDescriptor) noexcept;
 
     auto getClients() noexcept -> std::unordered_map<ClientId, Client> &;
     void addClient(Client) noexcept;
-    void removeClientByFd(Client&) noexcept;
+    void removeClientByFd(Client &) noexcept;
     auto clientByFd(FileDescriptor) noexcept -> Client &;
     void clearEventsByFd(FileDescriptor);
     void setPollingByFd(FileDescriptor, bool);
@@ -44,7 +44,7 @@ class StateController {
     void addChannel(ChannelName);
     void deleteChannel(ChannelName);
 
-    bool channelExists(const ChannelName &) const noexcept;
+    auto channelExists(const ChannelName &) const noexcept -> bool;
 
     void debugLogClients() const noexcept;
     void debugLogPollFds() const noexcept;

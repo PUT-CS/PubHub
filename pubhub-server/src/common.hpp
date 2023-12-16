@@ -3,31 +3,40 @@
 #define COMMON
 
 #include <cstdio>
+#include <ctime>
+#include <exception>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <thread>
-#include <ctime>
-#include <iostream>
-#include <exception>
 
 #define __LOG_LEVEL__ LogLevel::DEBUG
 #define __LOG_HEADER__                                                         \
     "[" + std::string(__FILE_NAME__) + ":" + std::to_string(__LINE__) +        \
         " in " + std::to_string(thread_id()) + +"]: "
 
-#define DEBUG(msg) __LOG_LEVEL__ <= LogLevel::DEBUG? __logDebug(__LOG_HEADER__ + msg) : (void)0
-#define INFO(msg) __LOG_LEVEL__ <= LogLevel::INFO? __logInfo(__LOG_HEADER__ + msg) : (void)0
-#define WARN(msg) __LOG_LEVEL__ <= LogLevel::WARN? __logWarn(__LOG_HEADER__ + msg) : (void)0
-#define ERROR(msg) __LOG_LEVEL__ <= LogLevel::ERROR? __logError(__LOG_HEADER__ + msg) : (void)0
+#define DEBUG(msg)                                                             \
+    __LOG_LEVEL__ <= LogLevel::DEBUG ? __logDebug(__LOG_HEADER__ + msg)        \
+                                     : (void)0
+#define INFO(msg)                                                              \
+    __LOG_LEVEL__ <= LogLevel::INFO ? __logInfo(__LOG_HEADER__ + msg) : (void)0
+#define WARN(msg)                                                              \
+    __LOG_LEVEL__ <= LogLevel::WARN ? __logWarn(__LOG_HEADER__ + msg) : (void)0
+#define ERROR(msg)                                                             \
+    __LOG_LEVEL__ <= LogLevel::ERROR ? __logError(__LOG_HEADER__ + msg)        \
+                                     : (void)0
 
-// Works well for a small number of threads, debug only and should not be trusted as accurate
-inline int thread_id() {
-    return (unsigned)std::hash<std::thread::id>()(std::this_thread::get_id()) % 1000;
+// Works well for a small number of threads, debug only and should not be
+// trusted as accurate
+inline auto thread_id() -> int {
+    return static_cast<unsigned>(
+               std::hash<std::thread::id>()(std::this_thread::get_id())) %
+           1000;
 }
 
 template <typename T> void print(T obj) { std::cout << obj << std::endl; }
 
-enum LogLevel {DEBUG, INFO, WARN, ERROR, NONE };
+enum LogLevel { DEBUG, INFO, WARN, ERROR, NONE };
 
 // Define logMessage at the beginning
 template <typename T>
@@ -54,7 +63,7 @@ inline void __logMessage(LogLevel level, const T &message) {
         break;
     case NONE:
         std::terminate();
-        break;    
+        break;
     }
 
     // Reset color after the message

@@ -10,7 +10,7 @@ NLOHMANN_JSON_PCH = $(NLOHMANN_JSON).pch
 
 # Compiler and compiler flags
 CC = clang++
-CC_COMMON_FLAGS = -Wall -Wextra -Wpedantic -Weffc++ -Werror -std=c++20 -pipe -D_FORTIFY_SOURCE=2 -D_GLIBCXX_ASSERTIONS
+CC_COMMON_FLAGS = -Wall -Wextra -Wpedantic -Weffc++ -Werror -std=c++20 -pipe
 CC_CODE_FLAGS =  $(CC_COMMON_FLAGS) -include-pch $(NLOHMANN_JSON_PCH) -ftime-trace
 #CC_CODE_FLAGS =  $(CC_COMMON_FLAGS) -ftime-trace
 CC_JSON_FLAGS = -o $(NLOHMANN_JSON_PCH) $(CC_COMMON_FLAGS)
@@ -42,7 +42,12 @@ $(EXECUTABLE): $(OBJECTS)
 run: $(EXECUTABLE)
 	./$(EXECUTABLE)
 
+tidy: $(SOURCES)
+	clang-tidy $(SOURCES)
+
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
 
 .PHONY: all run clean
+
+#---Checks:          'clang-diagnostic-*,clang-analyzer-*'

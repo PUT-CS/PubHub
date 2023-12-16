@@ -1,14 +1,15 @@
 #pragma once
+#include <cstdint>
 #ifndef TYPES_H
 #define TYPES_H
 
 #include <string>
 
 // Made to fix include recursion :(
-typedef int FileDescriptor;
-typedef FileDescriptor ClientId;
+using FileDescriptor = int;
+using ClientId = FileDescriptor;
 
-typedef unsigned long ChannelId;
-typedef std::string ChannelName;
+using ChannelId = uint64_t;
+using ChannelName = std::string;
 
 #endif

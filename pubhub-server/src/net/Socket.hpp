@@ -4,51 +4,48 @@
 #ifndef SOCKET_H
 #define SOCKET_H
 
-#include "SocketAddress.hpp"
 #include "../server/types.hpp"
+#include "SocketAddress.hpp"
 
 class Socket {
-  protected:
+  public:
     SocketAddress addr;
-    bool created = false;
+    FileDescriptor fd;
 
   public:
-    FileDescriptor fd;
-    
+    [[nodiscard]] auto getFd() noexcept -> FileDescriptor;
+    [[nodiscard]] auto address() const noexcept -> const SocketAddress &;
     void create();
-    std::string receive();
+    [[nodiscard]] auto receive() -> std::string;
     void send(std::string msg);
-    auto address() const noexcept -> const SocketAddress&;
     void kill();
     void shutdown();
     void close();
-    
-    ~Socket(){};
+
+    ~Socket() = default;
 };
 
 class ClientSocket : public Socket {
   public:
     ClientSocket();
-    ClientSocket(SocketAddress);
+    explicit ClientSocket(SocketAddress);
     ClientSocket(FileDescriptor, SocketAddress);
     void connect();
-    std::deque<std::byte> buffer;
-    
-    std::string fmt() const noexcept;
-    
-    ~ClientSocket(){};
-};
 
+    [[nodiscard]] auto fmt() const noexcept -> std::string;
+
+    ~ClientSocket() = default;
+};
 
 class ServerSocket : public Socket {
   public:
-    ServerSocket(SocketAddress);
+    explicit ServerSocket(SocketAddress);
     void bind();
     void listen();
-    
-    ClientSocket accept();
 
-    ~ServerSocket(){};
+    [[nodiscard]] auto accept() -> ClientSocket;
+
+    ~ServerSocket() = default;
 };
 
 #endif

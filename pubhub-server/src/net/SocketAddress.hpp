@@ -1,5 +1,4 @@
 #pragma once
-#include <cstdint>
 #ifndef SOCKET_ADDRESS_H
 #define SOCKET_ADDRESS_H
 
@@ -12,16 +11,16 @@ class SocketAddress {
     // unsigned int port;
 
   public:
-    SocketAddress(){};
-    SocketAddress(sockaddr_in);
-    SocketAddress(std::string ip, short unsigned port);
+    SocketAddress() = default;
+    explicit SocketAddress(sockaddr_in);
+    SocketAddress(std::string ip, uint16_t port);
 
-    auto inner() const -> sockaddr_in;
+    [[nodiscard]] auto inner() const -> sockaddr_in;
 
-    std::string fmt();
+    [[nodiscard]] auto fmt() -> std::string;
 
-    std::string getIp() const noexcept;
-    uint16_t getPort() const noexcept;
+    [[nodiscard]] auto getIp() const noexcept -> std::string;
+    [[nodiscard]] auto getPort() const noexcept -> uint16_t;
 
     void setPort(uint16_t);
     void setIp(std::string);

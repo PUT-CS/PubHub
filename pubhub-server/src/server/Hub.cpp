@@ -1,4 +1,4 @@
-#include "hub.hpp"
+#include "Hub.hpp"
 #include "../net/exceptions.hpp"
 #include "exceptions.hpp"
 #include <string>
@@ -10,12 +10,12 @@ Hub::Hub(SocketAddress addr) {
     this->socket->bind();
     this->socket->listen();
 
-    state_controller.registerPollFdFor(this->socket->fd);
+    state_controller.registerPollFdFor(this->socket->getFd());
 }
 
 void Hub::run() {
     INFO("Starting the PubHub Server...");
-    Event event;
+    Event event{};
     while (true) {
         INFO("Waiting for the next event...");
         while ((event = state_controller.nextEvent()).kind == EventKind::Nil) {
@@ -113,37 +113,38 @@ void Hub::handleInput(FileDescriptor fd) {
     }
 }
 
-Response Hub::handleSubscribe(const Client &client, const ChannelName &target) {
+auto Hub::handleSubscribe(const Client &client, const ChannelName &target)
+    -> Response {
     DEBUG("Subscribe handler");
     state_controller.addSubscription(client.getFd(), target);
     state_controller.debugLogChannels();
     return Response::Ok();
 }
 
-Response Hub::handleUnsubscribe(const Client &client,
-                                const ChannelName &target) {
+auto Hub::handleUnsubscribe(const Client &client, const ChannelName &target)
+    -> Response {
     DEBUG("Unsubscribe handler");
     state_controller.removeSubscription(client.getFd(), target);
     state_controller.debugLogChannels();
     return Response::Ok();
 }
 
-Response Hub::handleCreateChannel(const ChannelName &target) {
+auto Hub::handleCreateChannel(const ChannelName &target) -> Response {
     DEBUG("Adding channel");
     state_controller.addChannel(target);
     state_controller.debugLogChannels();
     return Response::Ok();
 }
 
-Response Hub::handleDeleteChannel(const ChannelName &target) {
+auto Hub::handleDeleteChannel(const ChannelName &target) -> Response {
     DEBUG("Deleting channel");
     state_controller.deleteChannel(target);
     state_controller.debugLogChannels();
     return Response::Ok();
 }
 
-Response Hub::handlePublish(const ChannelName &target,
-                            const nlohmann::json &message) {
+auto Hub::handlePublish(const ChannelName &target,
+                        const nlohmann::json &message) -> Response {
     DEBUG("Publishing");
     auto channel =
         state_controller.channelById(state_controller.channelIdByName(target));
@@ -156,7 +157,7 @@ Response Hub::handlePublish(const ChannelName &target,
     return Response::Ok();
 }
 
-Response Hub::handleAsk() {
+auto Hub::handleAsk() -> Response {
     if (state_controller.getChannels().empty()) {
         return Response::OkWithContent("<No Channels>");
     }
@@ -192,7 +193,7 @@ void Hub::handleNewConnection() noexcept {
    Throws:
    - **NetworkException** if either accept() or connect() fail
 **/
-Client Hub::accept() {
+auto Hub::accept() -> Client {
     auto client_socket = this->socket->accept();
     auto client = Client(client_socket);
 

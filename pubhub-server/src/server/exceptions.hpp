@@ -2,7 +2,9 @@
 #ifndef SERVER_EXCEPTIONS_H
 #define SERVER_EXCEPTIONS_H
 
-#include "client.hpp"
+#include <utility>
+
+#include "Client.hpp"
 
 // Base class for internal errors
 class InternalErrorException : public std::exception {
@@ -10,8 +12,10 @@ class InternalErrorException : public std::exception {
     std::string msg;
 
   public:
-    InternalErrorException(const std::string &what) { this->msg = what; }
-    const char *what() const noexcept override { return msg.c_str(); }
+    explicit InternalErrorException(std::string what) : msg(std::move(what)) {}
+    [[nodiscard]] auto what() const noexcept -> const char * override {
+        return msg.c_str();
+    }
 };
 
 // Base class for user-related errors
@@ -20,8 +24,10 @@ class InvalidInputException : public std::exception {
     std::string msg;
 
   public:
-    InvalidInputException(const std::string &what) { this->msg = what; }
-    const char *what() const noexcept override { return msg.c_str(); }
+    explicit InvalidInputException(std::string what) : msg(std::move(what)) {}
+    [[nodiscard]] auto what() const noexcept -> const char * override {
+        return msg.c_str();
+    }
 };
 
 class ChannelNotFoundException : public InvalidInputException {

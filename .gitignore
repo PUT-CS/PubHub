@@ -1,6 +1,7 @@
 bin/
 obj/
 */target
+**/.cache
 
 # Prerequisites
 *.d

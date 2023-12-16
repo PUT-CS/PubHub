@@ -8,18 +8,20 @@
 #include <string>
 
 class Channel {
+  private:
     static inline ChannelId idGen = 0;
-    public:
+
+  public:
     ChannelName name;
     std::set<ClientId> subscribers;
     ChannelId id;
-    
+
     Channel();
-    Channel(std::string);
-    
+    explicit Channel(std::string);
+
     void addSubscriber(ClientId) noexcept;
     void removeSubscriber(ClientId) noexcept;
-    
+
     ~Channel();
 };
 

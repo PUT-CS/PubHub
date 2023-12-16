@@ -1,12 +1,13 @@
-#include "state_controller.hpp"
+#include "StateController.hpp"
 #include "../common.hpp"
 #include "../net/exceptions.hpp"
-#include "channel.hpp"
-#include "client.hpp"
-#include "event.hpp"
+#include "Channel.hpp"
+#include "Client.hpp"
+#include "Event.hpp"
 #include "exceptions.hpp"
 #include "types.hpp"
 #include <algorithm>
+#include <cstdint>
 #include <functional>
 #include <iterator>
 #include <memory>
@@ -23,7 +24,7 @@
    Throws:
    - **NetworkException** if `poll` fails.
  **/
-Event StateController::nextEvent() {
+auto StateController::nextEvent() -> Event {
     int n_of_events = poll(this->poll_fds.data(), this->poll_fds.size(), 5);
 
     if (n_of_events == -1) {
@@ -36,7 +37,7 @@ Event StateController::nextEvent() {
     }
 
     // Look for a client with an event
-    for (long unsigned int i = 1; i < clients.size() + 1; i++) {
+    for (uint64_t i = 1; i < clients.size() + 1; i++) {
         const auto pfd = &this->poll_fds[i];
 
         if (!pfd->revents) {
@@ -60,7 +61,6 @@ void StateController::registerPollFdFor(FileDescriptor fd) noexcept {
     pollfd pfd = {fd, StateController::POLL_INPUT | StateController::POLL_ERROR,
                   0};
     this->poll_fds.push_back(pfd);
-        
 }
 
 auto StateController::getClients() noexcept
@@ -80,7 +80,7 @@ void StateController::removeClientByFd(Client &client) noexcept {
     client.killConnection();
 
     // Remove all subscriptions of that client
-    for (auto &sub_id : client.subscriptions) {
+    for (auto &sub_id : client.getSubscriptions()) {
         this->channels[sub_id].removeSubscriber(client.getFd());
     }
 
@@ -93,7 +93,7 @@ void StateController::removeClientByFd(Client &client) noexcept {
 }
 
 /// Assumes the client exists
-auto StateController::clientByFd(int fd) noexcept -> Client &{
+auto StateController::clientByFd(int fd) noexcept -> Client & {
     return std::ref(this->clients.find(fd)->second);
 }
 
@@ -160,7 +160,7 @@ auto StateController::getChannels() noexcept
    Throws:
    - **ChannelNotFoundException** if no channel with passed name exists
  **/
-ChannelId StateController::channelIdByName(ChannelName channel_name) {
+auto StateController::channelIdByName(ChannelName channel_name) -> ChannelId {
     for (auto &[id, channel] : this->channels) {
         if (channel.name == channel_name) {
             return id;
@@ -209,7 +209,7 @@ auto StateController::channelById(ChannelId id) -> Channel & {
     return std::ref(found->second);
 }
 
-bool StateController::channelExists(const ChannelName &name) const noexcept {
+auto StateController::channelExists(const ChannelName &name) const noexcept -> bool {
     auto f = [&](const std::pair<ChannelId, Channel> &p) {
         return p.second.name == name;
     };

@@ -14,7 +14,7 @@ enum class RequestKind {
     Ask
 };
 
-inline RequestKind fromString(std::string s) {
+inline auto fromString(std::string s) -> RequestKind {
     static const std::map<std::string, RequestKind> strMap = {
         {"Subscribe", RequestKind::Subscribe},
         {"Unsubscribe", RequestKind::Unsubscribe},
@@ -25,6 +25,5 @@ inline RequestKind fromString(std::string s) {
     return strMap.at(s);
 }
 } // namespace RequestKind
-
 
 #endif
