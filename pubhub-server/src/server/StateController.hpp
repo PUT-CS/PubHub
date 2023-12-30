@@ -32,7 +32,6 @@ class StateController {
     void addClient(Client) noexcept;
     void removeClientByFd(Client &) noexcept;
     auto clientByFd(FileDescriptor) noexcept -> Client &;
-    void clearEventsByFd(FileDescriptor);
     void setPollingByFd(FileDescriptor, bool);
 
     void addSubscription(ClientId, ChannelName);

@@ -1,4 +1,5 @@
 #pragma once
+#include <cctype>
 #ifndef COMMON
 #define COMMON
 
@@ -98,4 +99,14 @@ template <typename T> void __logError(const T &message) {
     __logMessage(ERROR, message);
 }
 
+inline auto string_has_whitespace(const std::string &s) -> bool {
+    for (const char &c : s) {
+        if (std::isspace(c)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 #endif
+

@@ -1,12 +1,13 @@
 #include "Client.hpp"
 #include "../common.hpp"
 #include <functional>
+#include <string>
 
 using nlohmann::json;
 
 Client::Client(ClientSocket socket) : socket(socket) {}
 
-auto Client::getSubscriptions() -> std::set<ChannelId> & {
+auto Client::getSubscriptions() -> const std::set<ChannelId> & {
     return std::ref(this->subscriptions);
 }
 
@@ -63,11 +64,10 @@ auto Client::receiveMessage() -> json {
     return nlohmann::json::parse(s);
 }
 
-void Client::publishMessage(json message) {
+void Client::publishMessage(const std::string& message) {
     WARN("\tSending to " + this->broadcast_socket.address().getIp() + ":" +
          std::to_string(this->broadcast_socket.address().getPort()));
-    auto msg_str = message.dump();
-    this->broadcast_socket.send(msg_str);
+    this->broadcast_socket.send(message);
     // INFO("Published " + message.dump(2) + " to " + this->fmt());
 }
 

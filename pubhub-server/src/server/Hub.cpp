@@ -26,18 +26,14 @@ void Hub::run() {
 }
 
 void Hub::handleEvent(Event event) {
+    DEBUG("Handling event");
     // purely a Server event
     if (event.kind == EventKind::ConnectionRequest) {
         this->handleNewConnection();
         return;
     }
 
-    // Clear client events, preventing next `poll`s from reporting anything here
-    // INFO("Clearing events...");
-    state_controller.clearEventsByFd(event.fd);
-
     // Disable polling for this client
-    // INFO("Disabling polling...");
     state_controller.setPollingByFd(event.fd, false);
 
     switch (event.kind) {
@@ -152,7 +148,7 @@ auto Hub::handlePublish(const ChannelName &target,
         INFO("Handling sub of id: " + std::to_string(sub_id));
         auto &subscriber = state_controller.clientByFd(sub_id);
         auto msg = nlohmann::json{{"channel", target}, {"content", message}};
-        subscriber.publishMessage(msg);
+        subscriber.publishMessage(msg.dump());
     }
     return Response::Ok();
 }
@@ -163,8 +159,9 @@ auto Hub::handleAsk() -> Response {
     }
 
     std::ostringstream oss;
+    // Channel names containing whitespace are forbidden    
     for (auto &i : state_controller.getChannels()) {
-        oss << i.second.name << ';';
+        oss << i.second.name << '\n';
     }
     DEBUG(oss.str());
     return Response::OkWithContent(oss.str());
@@ -181,7 +178,6 @@ void Hub::handleNewConnection() noexcept {
     try {
         client = this->accept();
     } catch (const NetworkException &e) {
-        client.killConnection();
         ERROR(e.what());
         return;
     }

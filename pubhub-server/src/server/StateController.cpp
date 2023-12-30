@@ -8,11 +8,13 @@
 #include "types.hpp"
 #include <algorithm>
 #include <cstdint>
+#include <cstdlib>
 #include <functional>
 #include <iterator>
 #include <memory>
 #include <mutex>
 #include <set>
+#include <string>
 #include <sys/poll.h>
 #include <tuple>
 #include <unordered_map>
@@ -114,16 +116,16 @@ auto StateController::clientByFd(int fd) noexcept -> Client & {
 //     return std::lock_guard<std::mutex>(*this->clients.at(id).lock);
 // }
 
-void StateController::clearEventsByFd(FileDescriptor fd) {
+void StateController::setPollingByFd(FileDescriptor fd, bool enable) {
     auto it = std::find_if(poll_fds.begin(), poll_fds.end(),
-                           [&](pollfd pfd) { return pfd.fd == fd; });
-    it->revents = 0;
-}
-void StateController::setPollingByFd(FileDescriptor fd, bool flag) {
-    auto it = std::find_if(poll_fds.begin(), poll_fds.end(),
-                           [&](pollfd pfd) { return pfd.fd == fd; });
+                           [&](pollfd pfd) { return abs(pfd.fd) == fd; });
+    // Don't do anything if the client has been erased already
+    if (it == this->poll_fds.end()) {
+        ERROR("Client with FD = " + std::to_string(fd) + " not found");
+        return;
+    }
     it->events =
-        flag ? StateController::POLL_INPUT | StateController::POLL_ERROR : 0;
+        enable ? StateController::POLL_INPUT | StateController::POLL_ERROR : 0;
 }
 
 /**
@@ -177,6 +179,9 @@ void StateController::addChannel(ChannelName channel_name) {
     if (this->channelExists(channel_name)) {
         throw ChannelAlreadyExistsException("Channel named " + channel_name +
                                             " already exists");
+    }
+    if (string_has_whitespace(channel_name)) {
+        throw InvalidInputException("Channel names cannot contain whitespace");
     }
     auto channel = Channel(channel_name);
     this->channels.insert({channel.id, channel});

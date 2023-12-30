@@ -35,10 +35,11 @@ auto Socket::receive() -> std::string {
         throw NetworkException("Read");
     }
 
-    auto message_buffer = std::make_unique<char[]>(msg_size + 1);
+    // auto message_buffer = std::make_unique<char[]>(msg_size + 1);
+    std::string message_buffer(msg_size, 0);
 
     ssize_t message_bytes_read =
-        recv(this->fd, message_buffer.get(), msg_size, MSG_WAITALL);
+        recv(this->fd, message_buffer.data(), msg_size, MSG_WAITALL);
 
     message_buffer[msg_size] = '\0'; // check if this can be deleted
 
@@ -51,9 +52,7 @@ auto Socket::receive() -> std::string {
         throw NetworkException("Socket already closed", false);
     }
 
-    auto str = std::string(message_buffer.get());
-
-    return str;
+    return message_buffer;
 };
 
 /**
@@ -61,31 +60,18 @@ auto Socket::receive() -> std::string {
    - **NetworkException** if send() fails
  **/
 void Socket::send(std::string message) {
-    uint32_t msg_size = message.size();
-    uint32_t net_msg_size = htonl(msg_size);
-
-    ssize_t bytes_sent =
-        ::send(this->fd, &net_msg_size, sizeof(net_msg_size), 0);
-    if (bytes_sent == -1) {
+    uint32_t net_msg_size = htonl(message.size());
+    if (::send(this->fd, &net_msg_size, sizeof(net_msg_size), 0) == -1) {
         throw NetworkException("Send");
     }
 
-    constexpr ssize_t CHUNK_SIZE = 1024 * 128; /// 128kB
-    ssize_t message_bytes_sent = 0;
-    while (static_cast<uint32_t>(message_bytes_sent) < msg_size) {
-        auto to_send = std::clamp((msg_size - message_bytes_sent),
-                                  static_cast<ssize_t>(0), CHUNK_SIZE);
-        auto data_ptr = message.c_str() + message_bytes_sent;
-
-        message_bytes_sent += ::send(this->fd, data_ptr, to_send, 0);
-        if (message_bytes_sent == -1) {
-            throw NetworkException("Send");
-        }
+    if (::send(this->fd, message.data(), message.size(), 0) == -1) {
+        throw NetworkException("Send");
     }
-};
+}
 
 auto Socket::address() const noexcept -> const SocketAddress & {
-    return std::ref(this->addr);
+    return this->addr;
 }
 
 auto Socket::getFd() noexcept -> FileDescriptor { return this->fd; }

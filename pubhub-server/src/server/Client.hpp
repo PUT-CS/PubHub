@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.hpp"
+#include <string>
 #ifndef CLIENT_H
 #define CLIENT_H
 
@@ -28,7 +29,7 @@ class Client {
 
     auto getSocket() -> ClientSocket &;
     auto getBroadcastSocket() -> ClientSocket &;
-    auto getSubscriptions() -> std::set<ChannelId> &;
+    auto getSubscriptions() -> const std::set<ChannelId> &;
 
     void initializeBroadcast(uint16_t);
     void subscribeTo(ChannelId) noexcept;
@@ -37,7 +38,7 @@ class Client {
     void killConnection() noexcept;
     [[nodiscard]] auto receiveMessage() -> nlohmann::json;
     void sendResponse(const Response &);
-    void publishMessage(nlohmann::json);
+    void publishMessage(const std::string&);
     void setListenForWrite(bool);
     [[nodiscard]] auto fmt() const noexcept -> std::string;
 

@@ -4,7 +4,8 @@
 #include <functional>
 #include <netinet/in.h>
 
-SocketAddress::SocketAddress(std::string ip, uint16_t port) : ip(ip) {
+SocketAddress::SocketAddress(const std::string &ip, uint16_t port)
+    : ip(ip), inner_addr() {
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
@@ -17,13 +18,15 @@ SocketAddress::SocketAddress(sockaddr_in addr) : inner_addr(addr) {
     this->ip = std::string(inet_ntoa(addr.sin_addr));
 }
 
-auto SocketAddress::getIp() const noexcept -> std::string { return this->ip; }
+auto SocketAddress::getIp() const noexcept -> const std::string & {
+    return this->ip;
+}
 
 auto SocketAddress::getPort() const noexcept -> uint16_t {
     return ntohs(this->inner_addr.sin_port);
 }
 
-void SocketAddress::setIp(std::string ip) {
+void SocketAddress::setIp(const std::string& ip) {
     this->ip = ip;
     inner_addr.sin_addr.s_addr = inet_addr(ip.c_str());
 }

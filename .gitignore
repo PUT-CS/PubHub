@@ -2,6 +2,8 @@ bin/
 obj/
 */target
 **/.cache
+*compile_commands.json
+*.org
 
 # Prerequisites
 *.d
