@@ -33,17 +33,9 @@ void Hub::handleEvent(Event event) {
         return;
     }
 
-    // Disable polling for this client
-    state_controller.setPollingByFd(event.fd, false);
-
     switch (event.kind) {
     case EventKind::Input:
-        // using `&` here causes a crash
-        std::thread([=]() {
-            this->handleInput(event.fd);
-            INFO("Enabling polling");
-            state_controller.setPollingByFd(event.fd, true);
-        }).detach();
+        this->handleInput(event.fd);
         break;
     case EventKind::Disconnect:
         this->handleDisconnect(event.fd);
