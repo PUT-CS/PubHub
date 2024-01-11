@@ -45,22 +45,21 @@ fn main() -> Result<()> {
     ];
 
     let addr = (Ipv4Addr::LOCALHOST, 8080);
-    let (mut request_sender, mut listener) = PubHubConnection::new(addr)?.into_inner();
+    let mut conn = PubHubConnection::new(addr)?;
 
-    let tid = std::thread::spawn(move || {
-        println!("\nListening...\n");
-        loop {
-            let msg = listener.next_message().unwrap();
-            eprintln!("Received a message: {}", msg.to_string());
-        }
-    });
-
-    let responses = requests.iter().map(|r| request_sender.execute(&r));
+    let responses = requests.iter().map(|r| conn.execute(&r));
 
     for (req, res) in requests.iter().zip(responses) {
         println!("{:<70} -> {res:->30?}", req.to_json().to_string());
     }
 
+    let tid = std::thread::spawn(move || {
+        println!("\nListening...\n");
+        loop {
+            let msg = conn.next_message().unwrap();
+            eprintln!("Received a message: {}", msg.to_string());
+        }
+    });
     tid.join().unwrap();
     Ok(())
 }

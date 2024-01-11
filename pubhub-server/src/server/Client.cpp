@@ -15,26 +15,6 @@ auto Client::getFd() const noexcept -> FileDescriptor {
     return this->socket.fd;
 }
 
-/**
-   Create a socket that will send the data to that client.
-   The client must receive from that socket to get published messages.
-
-   Throws:
-   - **NetworkException** if connect() fails
- **/
-void Client::initializeBroadcast(uint16_t to_port) {
-
-    // The client must listen on a port 1 higher than the server
-    auto old_addr = this->socket.address();
-    auto broadcast_addr = SocketAddress(old_addr.getIp(), to_port);
-
-    // this->broadcast_socket = ClientSocket(broadcast_addr);
-    this->broadcast_socket = ClientSocket(broadcast_addr);
-
-    this->broadcast_socket.connect();
-    INFO("Connected broadcast to " + broadcast_addr.fmt());
-}
-
 void Client::subscribeTo(ChannelId id) noexcept { subscriptions.insert(id); }
 
 void Client::unsubscribeFrom(ChannelId id) noexcept { subscriptions.erase(id); }

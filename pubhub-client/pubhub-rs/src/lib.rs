@@ -1,7 +1,7 @@
 use std::{
     io::{Read, Write},
     mem::size_of,
-    net::{Ipv4Addr, TcpListener, TcpStream},
+    net::{Ipv4Addr, TcpStream},
 };
 
 use request::Request;
@@ -15,15 +15,7 @@ pub mod response;
 type Result<T> = std::result::Result<T, anyhow::Error>;
 
 pub struct PubHubConnection {
-    request_handler: RequestHandler,
-    publish_receiver: PublishReceiver,
-}
-
-pub struct RequestHandler {
-    stream: TcpStream,
-}
-pub struct PublishReceiver {
-    stream: TcpStream,
+    socket: TcpStream,
 }
 
 trait PubHubReceiver {
@@ -47,7 +39,7 @@ impl PubHubReceiver for TcpStream {
     }
 }
 
-impl RequestHandler {
+impl PubHubConnection {
     pub fn execute(&mut self, request: &Request) -> Result<Response> {
         let json = request.to_json().to_string();
 
@@ -65,62 +57,37 @@ impl RequestHandler {
         // Convert to network byte order (big endian)
         let all: &[u8] = &[size.to_be_bytes().as_slice(), msg_bytes].concat();
 
-        self.stream.write_all(all)?;
+        self.socket.write_all(all)?;
 
         Ok(())
     }
 
     /// Block while waiting for the next incoming response
     fn await_response(&mut self) -> Result<Response> {
-        let message_bytes = self.stream.next_pubhub_message()?;
+        let message_bytes = self.socket.next_pubhub_message()?;
         let msg = String::from_utf8(message_bytes)?;
         let json: Value = serde_json::from_str(&msg)?;
 
         Response::try_from(json)
     }
-}
 
-impl PublishReceiver {
-    /// Receive a message from the broadcast listener
-    pub fn next_message(&mut self) -> Result<serde_json::Value> {
-        let message_bytes = self.stream.next_pubhub_message()?;
-        let msg = String::from_utf8(message_bytes)?;
-        let json = serde_json::from_str(&msg)?;
-
-        Ok(json)
-    }
-}
-
-impl PubHubConnection {
     pub fn new(addr: (Ipv4Addr, u16)) -> std::result::Result<Self, std::io::Error> {
-        let request_stream = TcpStream::connect(&addr)?;
+        let socket = TcpStream::connect(&addr)?;
 
         // Listen on the same port as the server + 1
         let listener_addr = (Ipv4Addr::LOCALHOST, addr.1 + 1);
         eprintln!("Listening on {listener_addr:?}");
 
-        // wait for the server to reciprocate the connection
-        let (publish_stream, _) = TcpListener::bind(listener_addr)?.accept()?;
-
         Ok(Self {
-            request_handler: RequestHandler {
-                stream: request_stream,
-            },
-            publish_receiver: PublishReceiver {
-                stream: publish_stream,
-            },
+            socket
         })
     }
 
-    pub fn execute(&mut self, request: &Request) -> Result<Response> {
-        self.request_handler.execute(request)
-    }
-
     pub fn next_message(&mut self) -> Result<serde_json::Value> {
-        self.publish_receiver.next_message()
-    }
+        let message_bytes = self.socket.next_pubhub_message()?;
+        let msg = String::from_utf8(message_bytes)?;
+        let json = serde_json::from_str(&msg)?;
 
-    pub fn into_inner(self) -> (RequestHandler, PublishReceiver) {
-        (self.request_handler, self.publish_receiver)
+        Ok(json)
     }
 }

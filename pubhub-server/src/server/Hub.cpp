@@ -192,10 +192,6 @@ void Hub::handleNewConnection() noexcept {
 auto Hub::accept() -> Client {
     auto client_socket = this->socket->accept();
     auto client = Client(client_socket);
-
-    auto hub_port = this->socket->address().getPort();
-    client.initializeBroadcast(hub_port + 1);
-
     return client;
 }
 
