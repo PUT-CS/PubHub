@@ -1,4 +1,4 @@
-use serde_json::Value;
+use serde_json::{Value, json};
 
 use crate::error::ConnectionError;
 
@@ -44,6 +44,26 @@ impl TryFrom<serde_json::Value> for Response {
         }
     }
 }
+
+impl ToString for Response {
+    fn to_string(&self) -> String {
+        match self {
+            Response::Ok { content } => {
+                json!({
+                    "status" : "Ok",
+                    "info" : content
+                }).to_string()
+            },
+            Response::Err { why } => {
+                json!({
+                    "status" : "Err",
+                    "info" : why
+                }).to_string()
+            }
+        }
+    }
+}
+
 
 #[cfg(test)]
 mod test {

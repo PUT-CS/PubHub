@@ -20,7 +20,7 @@ class Client {
     /// Socket for sending messages from subscribed channels.
     /// Initialized when accepting the client, but separately form the
     /// constructor.
-    ClientSocket broadcast_socket{};
+    //ClientSocket broadcast_socket{};
     std::set<ChannelId> subscriptions = {};
 
   public:

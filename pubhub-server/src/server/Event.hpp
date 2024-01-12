@@ -4,12 +4,7 @@
 
 #include "types.hpp"
 
-enum class EventKind {
-    Input,
-    Disconnect,
-    ConnectionRequest,
-    Nil
-};
+enum class EventKind { Input, Disconnect, ConnectionRequest, Nil };
 
 /**
    Returned from Hub::nextEvent.

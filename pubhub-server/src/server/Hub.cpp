@@ -29,15 +29,18 @@ void Hub::handleEvent(Event event) {
     DEBUG("Handling event");
     // purely a Server event
     if (event.kind == EventKind::ConnectionRequest) {
+        DEBUG("Handle New Connection");
         this->handleNewConnection();
         return;
     }
 
     switch (event.kind) {
     case EventKind::Input:
+        DEBUG("Handle Input");
         this->handleInput(event.fd);
         break;
     case EventKind::Disconnect:
+        DEBUG("Handle Disconnect");
         this->handleDisconnect(event.fd);
         break;
     default:

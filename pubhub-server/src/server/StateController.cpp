@@ -7,16 +7,10 @@
 #include "exceptions.hpp"
 #include "types.hpp"
 #include <algorithm>
-#include <cstdint>
-#include <cstdlib>
 #include <functional>
-#include <iterator>
-#include <memory>
-#include <mutex>
 #include <set>
 #include <string>
 #include <sys/poll.h>
-#include <tuple>
 #include <unordered_map>
 #include <utility>
 
@@ -27,7 +21,7 @@
    - **NetworkException** if `poll` fails.
  **/
 auto StateController::nextEvent() -> Event {
-    int n_of_events = poll(this->poll_fds.data(), this->poll_fds.size(), 5);
+    int n_of_events = poll(this->poll_fds.data(), this->poll_fds.size(), -1);
 
     if (n_of_events == -1) {
         throw NetworkException("Poll");
@@ -56,6 +50,8 @@ auto StateController::nextEvent() -> Event {
             return Event{EventKind::Input, pfd->fd};
         }
     }
+    // just so it compiles with returns on all paths
+    ERROR("Unreachable");
     return Event{EventKind::Nil, -1};
 }
 

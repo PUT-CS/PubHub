@@ -13,8 +13,10 @@ fn main() {
             dbg!(res);
         });
 
-    loop {
-        let message = conn.next_message().unwrap();
-        println!("{message:#?}\n");
+    let (listener, responses) = conn.into_listener().unwrap();
+    dbg!(responses);
+    
+    for msg in listener {
+        println!("{msg:#?}\n");
     }
 }

@@ -45,9 +45,9 @@ auto Client::receiveMessage() -> json {
 }
 
 void Client::publishMessage(const std::string& message) {
-    WARN("\tSending to " + this->broadcast_socket.address().getIp() + ":" +
-         std::to_string(this->broadcast_socket.address().getPort()));
-    this->broadcast_socket.send(message);
+    WARN("\tSending to " + this->socket.address().getIp() + ":" +
+         std::to_string(this->socket.address().getPort()));
+    this->socket.send(message);
     // INFO("Published " + message.dump(2) + " to " + this->fmt());
 }
 
