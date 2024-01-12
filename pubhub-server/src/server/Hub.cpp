@@ -1,8 +1,12 @@
 #include "Hub.hpp"
 #include "../net/exceptions.hpp"
+#include "Event.hpp"
 #include "exceptions.hpp"
+#include "types.hpp"
+#include <cstdio>
 #include <string>
 #include <thread>
+#include <vector>
 
 /// Create the Hub. Initializes the server socket and the first pollfd.
 Hub::Hub(SocketAddress addr) {
@@ -17,17 +21,26 @@ void Hub::run() {
     INFO("Starting the PubHub Server...");
     Event event{};
     while (true) {
-        INFO("Waiting for the next event...");
-        while ((event = state_controller.nextEvent()).kind == EventKind::Nil) {
-        }
+        //INFO("Waiting for the next event...");
+        event = state_controller.nextEvent();
         this->handleEvent(event);
-        // INFO("\n\nNEXT\n");
+        this->sweep();
+    }
+}
+
+// check for dead clients
+void Hub::sweep() {
+    for (auto& client : this->state_controller.getClients()) {
+        if (client.second.backlogSize() > 100) {
+            WARN("Client " + std::to_string(client.second.getFd()) + "is dead. Removing.");
+            this->state_controller.removeClientByFd(client.second);
+        }
     }
 }
 
 void Hub::handleEvent(Event event) {
-    DEBUG("Handling event");
-    // purely a Server event
+    // DEBUG("Handling event");
+    //  purely a Server event
     if (event.kind == EventKind::ConnectionRequest) {
         DEBUG("Handle New Connection");
         this->handleNewConnection();
@@ -42,6 +55,10 @@ void Hub::handleEvent(Event event) {
     case EventKind::Disconnect:
         DEBUG("Handle Disconnect");
         this->handleDisconnect(event.fd);
+        break;
+    case EventKind::OutputPossible:
+        //DEBUG("Output Possible");
+        this->handleOutput(event.fd);
         break;
     default:
         ERROR("Unreachable branch reached");
@@ -94,13 +111,31 @@ void Hub::handleInput(FileDescriptor fd) {
     } catch (const std::exception &e) {
         ERROR("Internal Error: " + std::string(e.what()));
         res = Response::InternalError();
+        this->state_controller.removeClientByFd(client);
     }
 
     try {
-        client.sendResponse(res);
+        this->state_controller.setPollOutByFd(client.getFd(), true);
+        DEBUG("TURN ON POLLOUT");
+        client.enqueueMessage(Response(res).toJson().dump());
     } catch (...) {
         ERROR("Failed to send response");
         state_controller.removeClientByFd(client);
+    }
+}
+
+void Hub::handleOutput(FileDescriptor fd) {
+    // send a message to the client that can receive it
+    //DEBUG("Output");
+    auto &client = this->state_controller.clientByFd(fd);
+    // if (!client.hasBacklog()) {
+    //     return;
+    // }
+    DEBUG("Flushing to " + std::to_string(fd));
+    client.flushOne();
+    if (!client.hasBacklog()) {
+        DEBUG("TURN OFF POLLOUT");
+        this->state_controller.setPollOutByFd(fd, false);
     }
 }
 
@@ -143,7 +178,8 @@ auto Hub::handlePublish(const ChannelName &target,
         INFO("Handling sub of id: " + std::to_string(sub_id));
         auto &subscriber = state_controller.clientByFd(sub_id);
         auto msg = nlohmann::json{{"channel", target}, {"content", message}};
-        subscriber.publishMessage(msg.dump());
+        this->state_controller.setPollOutByFd(subscriber.getFd(), true);
+        subscriber.enqueueMessage(msg.dump());
     }
     return Response::Ok();
 }
@@ -154,7 +190,7 @@ auto Hub::handleAsk() -> Response {
     }
 
     std::ostringstream oss;
-    // Channel names containing whitespace are forbidden    
+    // Channel names containing whitespace are forbidden
     for (auto &i : state_controller.getChannels()) {
         oss << i.second.name << '\n';
     }
@@ -176,8 +212,9 @@ void Hub::handleNewConnection() noexcept {
         ERROR(e.what());
         return;
     }
-    state_controller.addClient(client);
-    INFO("Added Client: " + client.fmt());
+
+    INFO("Adding Client: " + client.fmt());
+    state_controller.addClient(std::move(client));
 }
 
 /**

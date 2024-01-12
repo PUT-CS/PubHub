@@ -1,6 +1,8 @@
 #pragma once
 
 #include "types.hpp"
+#include <cstddef>
+#include <deque>
 #include <string>
 #ifndef CLIENT_H
 #define CLIENT_H
@@ -23,8 +25,12 @@ class Client {
     //ClientSocket broadcast_socket{};
     std::set<ChannelId> subscriptions = {};
 
+    // messages that the client should receive
+    std::deque<std::string> backlog_queue = {};
+
   public:
-    Client();
+    Client() = default;
+    
     explicit Client(ClientSocket);
 
     auto getSocket() -> ClientSocket &;
@@ -37,12 +43,16 @@ class Client {
     [[nodiscard]] auto getFd() const noexcept -> FileDescriptor;
     void killConnection() noexcept;
     [[nodiscard]] auto receiveMessage() -> nlohmann::json;
-    void sendResponse(const Response &);
-    void publishMessage(const std::string&);
+    void enqueueMessage(const std::string& msg);
+    void flushOne();
+    auto hasBacklog() -> bool;
+    auto backlogSize() -> size_t;
+    //void sendResponse(const Response &);
+    //void publishMessage(const std::string&);
     void setListenForWrite(bool);
     [[nodiscard]] auto fmt() const noexcept -> std::string;
 
-    ~Client();
+    ~Client() = default;
 };
 
 #endif

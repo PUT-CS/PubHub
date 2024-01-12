@@ -5,6 +5,7 @@
 #include "Client.hpp"
 #include "Event.hpp"
 #include "types.hpp"
+#include <random>
 #include <sys/poll.h>
 #include <unordered_map>
 #include <vector>
@@ -21,27 +22,33 @@ class StateController {
     std::unordered_map<FileDescriptor, Client> clients;
     std::unordered_map<ChannelId, Channel> channels;
 
+    std::random_device _rd;
+    std::default_random_engine _rng;
+
     static const auto POLL_ERROR = POLLERR | POLLNVAL | POLLHUP | POLLRDHUP;
     static const auto POLL_INPUT = POLLIN;
+    static const auto POLL_OUTPUT = POLLOUT;
+
+    static const auto POLL_ALL = POLL_ERROR | POLL_INPUT | POLL_OUTPUT;
 
   public:
     auto nextEvent() -> Event;
     void registerPollFdFor(FileDescriptor) noexcept;
 
     auto getClients() noexcept -> std::unordered_map<ClientId, Client> &;
-    void addClient(Client) noexcept;
+    void addClient(Client&&) noexcept;
     void removeClientByFd(Client &) noexcept;
     auto clientByFd(FileDescriptor) noexcept -> Client &;
-    void setPollingByFd(FileDescriptor, bool);
+    void setPollOutByFd(FileDescriptor, bool);
 
-    void addSubscription(ClientId, ChannelName);
-    void removeSubscription(ClientId, ChannelName);
+    void addSubscription(ClientId, const ChannelName&);
+    void removeSubscription(ClientId, const ChannelName&);
 
     auto getChannels() noexcept -> std::unordered_map<ChannelId, Channel> &;
-    auto channelIdByName(ChannelName) -> ChannelId;
+    auto channelIdByName(const ChannelName&) -> ChannelId;
     auto channelById(ChannelId) -> Channel &;
-    void addChannel(ChannelName);
-    void deleteChannel(ChannelName);
+    void addChannel(const ChannelName&);
+    void deleteChannel(const ChannelName&);
 
     auto channelExists(const ChannelName &) const noexcept -> bool;
 

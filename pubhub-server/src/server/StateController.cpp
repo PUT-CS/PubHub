@@ -7,12 +7,16 @@
 #include "exceptions.hpp"
 #include "types.hpp"
 #include <algorithm>
+#include <cstddef>
+#include <cstdio>
 #include <functional>
+#include <random>
 #include <set>
 #include <string>
 #include <sys/poll.h>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 /**
    Wait for the next event on either the server or one of the clients.
@@ -32,8 +36,18 @@ auto StateController::nextEvent() -> Event {
         return Event{EventKind::ConnectionRequest, poll_fds[0].fd};
     }
 
+    std::vector<size_t> indices{};
+    indices.reserve(clients.size() + 2);
+    for (size_t i = 1; i < clients.size() + 1; i++) {
+        indices.push_back(i);
+    }
+    std::random_device rd;
+    std::default_random_engine rng(rd());
+
+    std::shuffle(indices.begin(), indices.end(), rng);
+
     // Look for a client with an event
-    for (uint64_t i = 1; i < clients.size() + 1; i++) {
+    for (size_t i : indices) {
         const auto pfd = &this->poll_fds[i];
 
         if (!pfd->revents) {
@@ -49,24 +63,25 @@ auto StateController::nextEvent() -> Event {
         if (pfd->revents & StateController::POLL_INPUT) {
             return Event{EventKind::Input, pfd->fd};
         }
+
+        if (pfd->revents & StateController::POLL_OUTPUT) {
+            return Event{EventKind::OutputPossible, pfd->fd};
+        }
     }
-    // just so it compiles with returns on all paths
-    ERROR("Unreachable");
     return Event{EventKind::Nil, -1};
 }
 
 void StateController::registerPollFdFor(FileDescriptor fd) noexcept {
-    pollfd pfd = {fd, StateController::POLL_INPUT | StateController::POLL_ERROR,
-                  0};
+    pollfd pfd = {fd, StateController::POLL_ALL, 0};
     this->poll_fds.push_back(pfd);
 }
 
 auto StateController::getClients() noexcept
     -> std::unordered_map<ClientId, Client> & {
-    return std::ref(this->clients);
+    return this->clients;
 }
 
-void StateController::addClient(Client client) noexcept {
+void StateController::addClient(Client &&client) noexcept {
     // Add Client to the pollfd vector for polling events
     this->registerPollFdFor(client.getFd());
 
@@ -112,16 +127,19 @@ auto StateController::clientByFd(int fd) noexcept -> Client & {
 //     return std::lock_guard<std::mutex>(*this->clients.at(id).lock);
 // }
 
-void StateController::setPollingByFd(FileDescriptor fd, bool enable) {
+void StateController::setPollOutByFd(FileDescriptor fd, bool enable) {
+    // (void)fd;
+    // (void)enable;
     auto it = std::find_if(poll_fds.begin(), poll_fds.end(),
-                           [&](pollfd pfd) { return abs(pfd.fd) == fd; });
+                           [&](pollfd pfd) { return pfd.fd == fd; });
     // Don't do anything if the client has been erased already
     if (it == this->poll_fds.end()) {
-        ERROR("Client with FD = " + std::to_string(fd) + " not found");
         return;
     }
     it->events =
-        enable ? StateController::POLL_INPUT | StateController::POLL_ERROR : 0;
+        enable ? StateController::POLL_ERROR | StateController::POLL_INPUT |
+                     StateController::POLL_OUTPUT
+               : StateController::POLL_ERROR | StateController::POLL_INPUT;
 }
 
 /**
@@ -130,7 +148,7 @@ void StateController::setPollingByFd(FileDescriptor fd, bool enable) {
    - **ChannelNotFoundException** if no channel with passed name exists
  **/
 void StateController::addSubscription(ClientId client_id,
-                                      ChannelName channel_name) {
+                                      const ChannelName &channel_name) {
     auto channel_id = this->channelIdByName(channel_name);
 
     this->channels.at(channel_id).addSubscriber(client_id);
@@ -143,7 +161,7 @@ void StateController::addSubscription(ClientId client_id,
    - **ChannelNotFoundException** if no channel with passed name exists
  **/
 void StateController::removeSubscription(ClientId client_id,
-                                         ChannelName channel_name) {
+                                         const ChannelName &channel_name) {
     auto channel_id = this->channelIdByName(channel_name);
     this->channels[channel_id].removeSubscriber(client_id);
     this->clients[client_id].unsubscribeFrom(channel_id);
@@ -158,7 +176,8 @@ auto StateController::getChannels() noexcept
    Throws:
    - **ChannelNotFoundException** if no channel with passed name exists
  **/
-auto StateController::channelIdByName(ChannelName channel_name) -> ChannelId {
+auto StateController::channelIdByName(const ChannelName &channel_name)
+    -> ChannelId {
     for (auto &[id, channel] : this->channels) {
         if (channel.name == channel_name) {
             return id;
@@ -171,7 +190,7 @@ auto StateController::channelIdByName(ChannelName channel_name) -> ChannelId {
    Throws:
    - **ChannelAlreadyCreated** if channel with passed name already exists
  **/
-void StateController::addChannel(ChannelName channel_name) {
+void StateController::addChannel(const ChannelName &channel_name) {
     if (this->channelExists(channel_name)) {
         throw ChannelAlreadyExistsException("Channel named " + channel_name +
                                             " already exists");
@@ -187,7 +206,7 @@ void StateController::addChannel(ChannelName channel_name) {
    Throws:
    - **ChannelNotFoundException** if the channel already doesn't exist
  **/
-void StateController::deleteChannel(ChannelName channel_name) {
+void StateController::deleteChannel(const ChannelName &channel_name) {
     auto id = this->channelIdByName(channel_name);
     auto channel = channelById(id);
     for (auto &sub_id : channel.subscribers) {
@@ -210,7 +229,8 @@ auto StateController::channelById(ChannelId id) -> Channel & {
     return std::ref(found->second);
 }
 
-auto StateController::channelExists(const ChannelName &name) const noexcept -> bool {
+auto StateController::channelExists(const ChannelName &name) const noexcept
+    -> bool {
     auto f = [&](const std::pair<ChannelId, Channel> &p) {
         return p.second.name == name;
     };

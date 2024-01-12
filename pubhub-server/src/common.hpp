@@ -11,7 +11,7 @@
 #include <string>
 #include <thread>
 
-#define __LOG_LEVEL__ LogLevel::DEBUG
+#define __LOG_LEVEL__ LogLevel::INFO
 #define __LOG_HEADER__                                                         \
     "[" + std::string(__FILE_NAME__) + ":" + std::to_string(__LINE__) +        \
         " in " + std::to_string(thread_id()) + +"]: "

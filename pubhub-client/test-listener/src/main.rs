@@ -17,6 +17,6 @@ fn main() {
     dbg!(responses);
     
     for msg in listener {
-        println!("{msg:#?}\n");
+        println!("{:#?}\n", msg.unwrap());
     }
 }

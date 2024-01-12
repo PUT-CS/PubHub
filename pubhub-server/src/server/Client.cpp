@@ -1,5 +1,7 @@
 #include "Client.hpp"
 #include "../common.hpp"
+#include <algorithm>
+#include <cstddef>
 #include <functional>
 #include <string>
 
@@ -44,17 +46,37 @@ auto Client::receiveMessage() -> json {
     return nlohmann::json::parse(s);
 }
 
-void Client::publishMessage(const std::string& message) {
-    WARN("\tSending to " + this->socket.address().getIp() + ":" +
-         std::to_string(this->socket.address().getPort()));
-    this->socket.send(message);
-    // INFO("Published " + message.dump(2) + " to " + this->fmt());
+// void Client::publishMessage(const std::string& message) {
+//     WARN("\tSending to " + this->socket.address().getIp() + ":" +
+//          std::to_string(this->socket.address().getPort()));
+//     this->socket.send(message);
+//     // INFO("Published " + message.dump(2) + " to " + this->fmt());
+// }
+
+// void Client::sendResponse(const Response &response) {
+//     auto res_str = response.toJson().dump();
+//     INFO("Responding with " + res_str);
+//     this->socket.send(res_str);
+// }
+
+void Client::enqueueMessage(const std::string& msg) {
+    DEBUG("Enqueue: " + msg);
+    this->backlog_queue.push_back(std::move(msg));
+    DEBUG(std::to_string(this->backlog_queue.size()));
 }
 
-void Client::sendResponse(const Response &response) {
-    auto res_str = response.toJson().dump();
-    INFO("Responding with " + res_str);
-    this->socket.send(res_str);
+auto Client::backlogSize() -> size_t { return backlog_queue.size(); }
+
+void Client::flushOne() {
+    auto msg = this->backlog_queue.front();
+    this->backlog_queue.pop_front();
+    DEBUG("Flushing: " + msg);
+    this->socket.send(msg);
+    // check if disable POLLOUT
+}
+
+auto Client::hasBacklog() -> bool {
+    return this->backlog_queue.size() > 0;
 }
 
 auto Client::fmt() const noexcept -> std::string {
@@ -63,6 +85,3 @@ auto Client::fmt() const noexcept -> std::string {
            std::to_string(this->socket.address().getPort());
 }
 
-Client::Client() = default;
-
-Client::~Client() = default;

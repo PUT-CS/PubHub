@@ -1,4 +1,5 @@
 #pragma once
+#include "types.hpp"
 #ifndef HUB_H
 #define HUB_H
 
@@ -16,6 +17,7 @@ class Hub {
 
     void handleEvent(Event);
     void handleInput(FileDescriptor);
+    void handleOutput(FileDescriptor);
     void handleDisconnect(FileDescriptor fd) noexcept;
     void handleNewConnection() noexcept;
 
@@ -27,6 +29,8 @@ class Hub {
     auto handleAsk() -> Response;
     
     auto accept() -> Client;
+
+    void sweep();
 
   public:
     explicit Hub(SocketAddress);
