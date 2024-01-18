@@ -9,3 +9,7 @@ members = [
     "test-client",
     "test-listener"
 ]
+
+[profile.release]
+opt-level = "z"  # Optimize for size.
+strip = true
