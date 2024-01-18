@@ -1,7 +1,7 @@
 use pubhub_rs::{request::Request, PubHubConnection};
 use rand::Rng;
 use serde_json::json;
-use std::net::Ipv4Addr;
+use std::{net::Ipv4Addr, str::FromStr};
 
 type Result<T> = std::result::Result<T, anyhow::Error>;
 
@@ -44,8 +44,12 @@ fn main() -> Result<()> {
         Request::DeleteChannel("null".into()),
     ];
 
-    let addr = (Ipv4Addr::LOCALHOST, 8080);
-    let mut conn = PubHubConnection::new(addr)?;
+    let mut args = std::env::args().skip(1);
+    let ip = args.next().unwrap();
+    let port: u16 = args.next().unwrap().parse()?;
+    let addr = Ipv4Addr::from_str(&ip)?;
+    
+    let mut conn = PubHubConnection::new((addr, port))?;
     
     let responses = requests.iter().map(|r| conn.execute(r));
 

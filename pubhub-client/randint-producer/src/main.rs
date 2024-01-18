@@ -1,11 +1,16 @@
-use std::net::Ipv4Addr;
+use std::{net::Ipv4Addr, str::FromStr};
 use pubhub_rs::{PubHubConnection, request::Request};
 use rand::Rng;
 use serde_json::json;
 use std::time::Duration;
 
 fn main() {
-    let mut connection = PubHubConnection::new((Ipv4Addr::LOCALHOST, 8080)).unwrap();
+    let mut args = std::env::args().skip(1);
+    let ip = args.next().unwrap();
+    let port: u16 = args.next().unwrap().parse().unwrap();
+    let addr = Ipv4Addr::from_str(&ip).unwrap();
+    
+    let mut connection = PubHubConnection::new((addr, port)).unwrap();
     let create_request = Request::CreateChannel("randint".to_string());
     let _ = connection.execute(&create_request).unwrap();
     
