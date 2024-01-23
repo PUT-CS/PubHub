@@ -45,8 +45,8 @@ fn main() -> Result<()> {
     ];
 
     let mut args = std::env::args().skip(1);
-    let ip = args.next().unwrap();
-    let port: u16 = args.next().unwrap().parse()?;
+    let ip = args.next().expect("Provide an IP address");
+    let port = args.next().expect("Provide a port number").parse()?;
     let addr = Ipv4Addr::from_str(&ip)?;
     
     let mut conn = PubHubConnection::new((addr, port))?;

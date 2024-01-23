@@ -7,7 +7,9 @@ use std::time::Duration;
 fn main() {
     let mut args = std::env::args().skip(1);
     let ip = args.next().unwrap();
-    let port: u16 = args.next().unwrap().parse().unwrap();
+    let port_s = args.next().unwrap();
+    dbg!(&port_s);
+    let port = port_s.parse().unwrap();
     let addr = Ipv4Addr::from_str(&ip).unwrap();
     
     let mut connection = PubHubConnection::new((addr, port)).unwrap();
