@@ -2,7 +2,8 @@ bin/
 obj/
 */target
 **/.cache
-*compile_commands.json
+*/**/compile_commands.json
+compile_commands.json
 *.org
 
 # Prerequisites
